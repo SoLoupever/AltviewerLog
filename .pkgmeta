@@ -1,0 +1,12 @@
+package-as: AltViewerLog
+
+move-folders:
+
+externals:
+
+ignore:
+  - .github
+  - .gitignore
+  - .gitattributes
+  - README
+  - README.md
