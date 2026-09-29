@@ -1,0 +1,17 @@
+## Interface: 120100
+## Title: AltViewerLog |cff4da6ffGraph|r
+## Notes: Graphique du temps de jeu par classe pour AltViewerLog.
+## Author: SoLoup_ever
+## RequiredDeps: AltViewerLog
+## Version: 1.0.0
+## IconTexture: Interface\AddOns\AltViewerLog\Logo_Alt.blp
+
+## ── LOCALISATION ─────────────────────────────────────────────────
+locales\Locales_frFR.lua
+locales\Locales_enUS.lua
+
+## ── INTERFACE ────────────────────────────────────────────────────
+ui\View.lua
+
+## ── INIT — Chargé en dernier ─────────────────────────────────────
+Init.lua

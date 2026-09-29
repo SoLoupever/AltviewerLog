@@ -1,0 +1,22 @@
+## Interface: 120100
+## Title: AltViewerLog |cff00aaff[Guilde]|r
+## Notes: Affichage du coffre de guilde pour AltViewerLog
+## Author: SoLoup_ever
+## RequiredDeps: AltViewerLog, ViewerLog
+## Version: 1.0.0
+## IconTexture: Interface\AddOns\AltViewerLog\Logo_Alt.blp
+## AddonCompartmentFunc: AVL_GuildeLog_OnCompartmentClick
+## AddonCompartmentFuncOnEnter: AVL_GuildeLog_OnCompartmentEnter
+## AddonCompartmentFuncOnLeave: AVL_GuildeLog_OnCompartmentLeave
+## SavedVariables: AltViewerLog_GuildeDB
+
+## ── LOCALISATION ─────────────────────────────────────────────────
+locales\Locales_frFR.lua
+locales\Locales_enUS.lua
+
+## ── INTERFACE ────────────────────────────────────────────────────
+ui\View.lua
+ui\Settings.lua
+
+## ── INIT — Chargé en dernier ─────────────────────────────────────
+Init.lua

@@ -1,0 +1,30 @@
+## Interface: 120100
+## Title: AltViewerLog |cff00ff00Professions|r
+## Notes: Suivi des métiers pour AltViewerLog (paliers, rangs, bois). Le housing est géré par ViewerLog_Housing.
+## Author: SoLoup_ever
+## RequiredDeps: AltViewerLog
+## Version: 1.0.0
+## IconTexture: Interface\AddOns\AltViewerLog\Logo_Alt.blp
+
+## ── LOCALISATION ─────────────────────────────────────────────────
+locales\Locales_frFR.lua
+locales\Locales_enUS.lua
+
+## ── DONNÉES ──────────────────────────────────────────────────────
+data\Constants.lua
+
+## ── SCANNER ──────────────────────────────────────────────────────
+scanner\Professions.lua
+
+## ── INTERFACE ────────────────────────────────────────────────────
+ui\Bar.lua
+ui\Dropdown.lua
+ui\Popup.lua
+ui\BlizzProfPanel.lua
+ui\Settings.lua
+ui\RecipeGrid.lua
+ui\RecipesBar.lua
+ui\View.lua
+
+## ── INIT — Chargé en dernier ─────────────────────────────────────
+Init.lua

@@ -1,0 +1,20 @@
+## Interface: 120100
+## Title: AltViewerLog |cffa040ff[Réputations]|r
+## Notes: Affichage des réputations de tous les personnages pour AltViewerLog
+## Author: SoLoup_ever
+## Version: 1.0.0
+## IconTexture: Interface\AddOns\AltViewerLog\Logo_Alt.blp
+## RequiredDeps: AltViewerLog, ViewerLog
+
+## ── LOCALISATION ─────────────────────────────────────────────────
+locales\Locales_frFR.lua
+locales\Locales_enUS.lua
+
+## ── LOGIQUE ──────────────────────────────────────────────────────
+logic\BestCharacter.lua
+
+## ── INTERFACE ────────────────────────────────────────────────────
+ui\View.lua
+
+## ── INIT — Chargé en dernier ─────────────────────────────────────
+Init.lua
