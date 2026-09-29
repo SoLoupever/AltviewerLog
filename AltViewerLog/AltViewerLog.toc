@@ -6,6 +6,7 @@
 ## IconTexture: Interface\AddOns\AltViewerLog\Logo_Alt.blp
 ## SavedVariables: AltViewerLogDB
 ## Dependencies: ViewerLog
+## X-Wago-ID:kGr99AKy
 
 ## ── LIBRAIRIES ────────────────────────────────────────────────────
 libs\LibStub\LibStub.lua
