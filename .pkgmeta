@@ -1,5 +1,11 @@
 package-as: AltViewerLog
 
+move-folders:
+  AltViewerLog/AltViewerLog_Graph: AltViewerLog_Graph
+  AltViewerLog/AltViewerLog_GuildeLog: AltViewerLog_GuildeLog
+  AltViewerLog/AltViewerLog_Professions: AltViewerLog_Professions
+  AltViewerLog/AltViewerLog_Reput: AltViewerLog_Reput
+
 ignore:
   - .github
   - .gitignore
