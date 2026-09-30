@@ -1,9 +1,9 @@
-name: AltViewerLog
+name: Package and Release AltViewerLog
 
 on:
   push:
     tags:
-      - 'v'
+      - '**'
 
 permissions:
   contents: read
@@ -11,14 +11,17 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+
     permissions:
       contents: write
+
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: BigWigsMods/packager@e50a250f8705041e40f2fa1ddcb280a686d65aa0 # v2.6.1
+      - uses: BigWigsMods/packager@v2
         env:
           WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
+          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
