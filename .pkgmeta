@@ -10,3 +10,4 @@ ignore:
   - .gitattributes
   - README
   - README.md
+  -.Pkgmeta
