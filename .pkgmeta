@@ -1,9 +1,5 @@
 package-as: AltViewerLog
 
-move-folders:
-
-externals:
-
 ignore:
   - .github
   - .gitignore
