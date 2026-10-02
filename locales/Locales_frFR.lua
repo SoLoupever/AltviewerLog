@@ -160,6 +160,26 @@ ns.locales["frFR"] = {
     CAT_ASSIGN        = "Assigner à :",
     CAT_REMOVE_ASSIGN = "Retirer de la catégorie",
 
+    -- Gestion des catégories (fenêtre « Ordre des catégories ») + drag & drop
+    CATMGR_TITLE         = "Gestion des catégories",
+    CATMGR_HINT          = "Glissez une ligne ou utilisez les flèches pour réordonner",
+    CATMGR_MOVE_UP       = "Monter",
+    CATMGR_MOVE_DOWN     = "Descendre",
+    CATMGR_DELETE        = "Supprimer la catégorie",
+    CATMGR_NEW_NAME      = "Nouvelle catégorie :",
+    CATMGR_ADD_BTN       = "Ajouter",
+    CATMGR_ERR_EMPTY     = "Le nom ne peut pas être vide.",
+    CATMGR_ERR_EXISTS    = "Cette catégorie existe déjà.",
+    CATMGR_SELECT_HINT   = "Sélectionnez une catégorie pour gérer ses objets",
+    CATMGR_ITEMS_OF      = "Objets assignés à %s",
+    CATMGR_MORE          = "+%d autres",
+    CATMGR_ITEM_REMOVE_TT = "Clic : retirer de la catégorie",
+    CATMGR_ITEM_ID       = "ID d'objet :",
+    CATMGR_ITEM_ADD      = "Ajouter l'objet",
+    CATMGR_ERR_NO_SEL    = "Sélectionnez d'abord une catégorie.",
+    CATMGR_ERR_BAD_ITEM  = "ID d'objet invalide.",
+    CATDND_PLUS_TT       = "Déposez un objet ici pour l'ajouter à cette catégorie",
+
 
     -- Tracker de Bois (plugin Métiers)
     WOOD_PANEL_HIDE       = "Cliquez pour masquer la barre de bois",

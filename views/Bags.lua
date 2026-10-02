@@ -12,14 +12,13 @@ local addonName, ns = ...
 --   ns.GetContentWidth, ns.scrollChild
 --   ns.OpenCharSelector, ns.charSelMenu
 --   ns.liveDynBuckets, ns.liveDynBucketOrder (écrits ici, lus par ViewCategories)
---   ns.ToggleCatOrderPanel (ViewCategories.lua)
+--   ns.ToggleCatOrderPanel (CategoryManager.lua)
 -- ====================================================
 
 -- Contexte conservé pour les popups et menus
 ns.bagViewData      = nil
 ns.bagViewChar      = nil
 ns.bagViewRealm     = nil
-ns.pendingCatItemID = nil
 
 function ns.ShowBags(data, charName, realmName)
     if not ns.scrollChild then return end
@@ -98,7 +97,7 @@ function ns.ShowBags(data, charName, realmName)
             gearBtn:SetScript("OnClick", function(s)
                 ns.ToggleCatOrderPanel(s, capData,
                     function() ns.ShowBags(capData, capChar, capRealm) end,
-                    ns.liveDynBuckets, ns.liveDynBucketOrder)
+                    function() return ns.liveDynBuckets, ns.liveDynBucketOrder end)
             end)
         end
 

@@ -6,6 +6,7 @@
 ## IconTexture: Interface\AddOns\AltViewerLog\Logo_Alt.blp
 ## SavedVariables: AltViewerLogDB
 ## Dependencies: ViewerLog
+## X-Curse-Project-ID:1584601
 ## X-Wago-ID: kGr99AKy
 
 ## ── LIBRAIRIES ────────────────────────────────────────────────────
@@ -27,6 +28,7 @@ core\SlashCmd.lua
 
 ## ── VUES ──────────────────────────────────────────────────────────
 views\Shared.lua
+views\CategoryStore.lua
 views\Categories.lua
 views\Bags.lua
 
@@ -38,6 +40,8 @@ fonctionnalite\Search.lua
 fonctionnalite\Warband.lua
 fonctionnalite\Gear.lua
 fonctionnalite\Discord.lua
+fonctionnalite\CategoryManager.lua
+fonctionnalite\CategoryDnD.lua
 
 ## ── INTERFACE ─────────────────────────────────────────────────────
 ui\MainFrame.lua

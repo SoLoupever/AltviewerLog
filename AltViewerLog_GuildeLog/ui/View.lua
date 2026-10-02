@@ -71,6 +71,7 @@ local function ReleaseAllIcons()
     for _, f in ipairs(activeIcons) do
         f:Hide(); f:ClearAllPoints()
         f:SetScript("OnEnter", nil); f:SetScript("OnLeave", nil); f:SetScript("OnClick", nil)
+        if core and core.CatDnD then core.CatDnD.Detach(f) end
         iconPool[#iconPool + 1] = f
     end
     wipe(activeIcons)
@@ -539,7 +540,8 @@ DrawGuildView = function()
 
     -- Placement d'un item : centralise icône + tooltip, partagé par les
     -- deux modes d'affichage.
-    local function DrawItemButton(entry, x, y)
+    -- dnd = { store=, refresh= } en mode catégorie : l'icône devient draggable.
+    local function DrawItemButton(entry, x, y, dnd)
         local b = AcquireIcon(scrollChild)
         b:SetSize(32, 32)
         b:SetPoint("TOPLEFT", x, y)
@@ -568,6 +570,7 @@ DrawGuildView = function()
             end
             GameTooltip:Show()
         end
+        if dnd and core.CatDnD then core.CatDnD.AttachItem(b, cid, dnd.store, dnd.refresh) end
         b:SetScript("OnEnter", ShowItemTooltip)
         b:SetScript("OnLeave", function() GameTooltip:Hide() end)
         b:RegisterForClicks("LeftButtonUp")
@@ -587,52 +590,46 @@ DrawGuildView = function()
         end
         scrollChild:SetHeight(math.abs(baseY) + ((row + 1) * 35) + 60)
     else
-        -- ── Mode catégorie : groupement par type Blizzard sur l'onglet
-        -- affiché. Réutilise la catégorisation du core (AltViewerLog) ;
+        -- ── Mode catégorie : moteur partagé du core (core.Cat) ────────
+        -- Même store / ordre / drag & drop que sacs, banque et bataillon ;
         -- libellé blanc + compteur bleu, comme la vue Bataillon.
-        local buckets, order = {}, {}
-        local function Bucket(key, label)
-            local bkt = buckets[key]
-            if not bkt then
-                bkt = { label = label, items = {} }
-                buckets[key] = bkt
-                order[#order + 1] = key
-            end
-            return bkt
+        local store   = core.Cat.GetStore("guild")
+        local refresh = function() DrawGuildView() end
+        local buckets, order = core.Cat.Distribute(store, sortedSlots)
+        pluginNs.liveBuckets, pluginNs.liveOrder = buckets, order
+        local getLive = function() return pluginNs.liveBuckets, pluginNs.liveOrder end
+        local dnd = { store = store, refresh = refresh }
+
+        -- Bouton "Ordre des catégories" (coin haut droit de la zone contenu)
+        if core.CatManager then
+            local gear = core.CatManager.CreateGearButton(scrollChild, function(s)
+                core.ToggleCatOrderPanel(s, store, refresh, getLive)
+            end)
+            gear:ClearAllPoints()
+            gear:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", -30, -16)
         end
 
-        for _, entry in ipairs(sortedSlots) do
-            local catInfo = core.AVL_GetBlizzardCategory
-                        and core.AVL_GetBlizzardCategory(entry.id)
-            if catInfo then
-                local bkt = Bucket(catInfo.key, catInfo.label)
-                bkt.items[#bkt.items + 1] = entry
-            else
-                -- core (AltViewerLog) est une dépendance requise → core.L
-                -- toujours disponible ; réutilise sa clé CAT_AUTRE.
-                local bkt = Bucket("B_AUTRE", core.L("CAT_AUTRE"))
-                bkt.items[#bkt.items + 1] = entry
-            end
-        end
-
-        for _, key in ipairs(order) do
+        for _, key in ipairs(core.Cat.Order(store, buckets, order)) do
             local bkt = buckets[key]
-            if #bkt.items > 0 then
-                local hdr = AcquireCatHeader(scrollChild)
-                hdr:SetPoint("TOPLEFT", 20, baseY)
-                hdr:SetText(bkt.label .. " |cff4da6ff(" .. #bkt.items .. ")|r")
-                baseY = baseY - 26
+            local hdr = AcquireCatHeader(scrollChild)
+            hdr:SetPoint("TOPLEFT", 20, baseY)
+            hdr:SetText(bkt.label .. " |cff4da6ff(" .. #bkt.items .. ")|r")
+            baseY = baseY - 26
 
-                local col, row = 0, 0
-                for _, entry in ipairs(bkt.items) do
-                    DrawItemButton(entry, 20 + col * 35, baseY - row * 35)
-                    col = col + 1
-                    if col >= MAX_COLS then col = 0; row = row + 1 end
-                end
-                baseY = baseY - ((row + 1) * 35) - 12
+            local col, row = 0, 0
+            for _, entry in ipairs(bkt.items) do
+                DrawItemButton(entry, 20 + col * 35, baseY - row * 35, dnd)
+                col = col + 1
+                if col >= MAX_COLS then col = 0; row = row + 1 end
             end
+            -- Slot "+" : dernier emplacement de la catégorie (drop d'un item)
+            if core.CatDnD then
+                core.CatDnD.AddPlus(scrollChild, 20 + col * 35, baseY - row * 35, key, store, refresh)
+            end
+            baseY = baseY - ((row + 1) * 35) - 12
         end
         scrollChild:SetHeight(math.abs(baseY) + 60)
+        if core.CatManager then core.CatManager.Notify(store, refresh, getLive) end
     end
     RefreshSelectorButtons()
 end

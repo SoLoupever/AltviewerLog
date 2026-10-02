@@ -157,6 +157,26 @@ ns.locales["enUS"] = {
     CAT_ASSIGN        = "Assign to:",
     CAT_REMOVE_ASSIGN = "Remove from category",
 
+    -- Category management ("Category order" window) + drag & drop
+    CATMGR_TITLE         = "Category management",
+    CATMGR_HINT          = "Drag a row or use the arrows to reorder",
+    CATMGR_MOVE_UP       = "Move up",
+    CATMGR_MOVE_DOWN     = "Move down",
+    CATMGR_DELETE        = "Delete category",
+    CATMGR_NEW_NAME      = "New category:",
+    CATMGR_ADD_BTN       = "Add",
+    CATMGR_ERR_EMPTY     = "The name cannot be empty.",
+    CATMGR_ERR_EXISTS    = "This category already exists.",
+    CATMGR_SELECT_HINT   = "Select a category to manage its items",
+    CATMGR_ITEMS_OF      = "Items assigned to %s",
+    CATMGR_MORE          = "+%d more",
+    CATMGR_ITEM_REMOVE_TT = "Click: remove from category",
+    CATMGR_ITEM_ID       = "Item ID:",
+    CATMGR_ITEM_ADD      = "Add item",
+    CATMGR_ERR_NO_SEL    = "Select a category first.",
+    CATMGR_ERR_BAD_ITEM  = "Invalid item ID.",
+    CATDND_PLUS_TT       = "Drop an item here to add it to this category",
+
 
     -- Wood Tracker (Professions plugin)
     WOOD_PANEL_HIDE       = "Click to hide the wood bar",

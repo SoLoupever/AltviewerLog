@@ -43,6 +43,7 @@ local function ReleaseBankItemButtons()
         b:SetScript("OnEnter", nil)
         b:SetScript("OnLeave", nil)
         b:SetScript("OnClick", nil)
+        if ns.CatDnD then ns.CatDnD.Detach(b) end
         bankBtnPool[#bankBtnPool+1] = b
     end
     bankActiveBtns = {}
@@ -52,6 +53,7 @@ function ns.ClearBankContent()
     if not ns.bankScrollChild then return end
     ns.AVL_Deselect()
     ReleaseBankItemButtons()
+    if ns.CatDnD then ns.CatDnD.ReleaseFor(ns.bankScrollChild) end
     local regions = { ns.bankScrollChild:GetRegions() }
     for _, r in ipairs(regions) do if r.Hide then r:Hide() end end
     local children = { ns.bankScrollChild:GetChildren() }
@@ -277,7 +279,7 @@ function ns.ShowBank(charName, realmName)
             bankGearBtn:SetScript("OnClick", function(s)
                 -- ns.liveBankBuckets rempli après le calcul des buckets (plus bas)
                 ns.ToggleCatOrderPanel(s, capBankData, refreshBank,
-                    ns.liveBankBuckets, ns.liveBankBucketOrder)
+                    function() return ns.liveBankBuckets, ns.liveBankBucketOrder end)
             end)
         end
 
@@ -302,55 +304,20 @@ function ns.ShowBank(charName, realmName)
             end
         end
 
-        -- Catégories (partagées avec l'inventaire via data.customCategories)
-        data.customCategories = data.customCategories or {}
-        local itemToCustom = {}
-        for catName, catData in pairs(data.customCategories) do
-            for itemID in pairs(catData.items or {}) do itemToCustom[itemID] = catName end
-        end
-
-        -- Distribution dynamique Blizzard avec labels (comme ShowBags)
-        local bankBuckets     = {}
-        local bankBucketOrder = {}
-
-        local function GetOrCreateBankBucket(key, label, isCustom, customName)
-            if not bankBuckets[key] then
-                bankBuckets[key] = { label=label, isCustom=isCustom, name=customName, items={} }
-                bankBucketOrder[#bankBucketOrder+1] = key
-            end
-            return bankBuckets[key]
-        end
-
-        -- Pré-créer les custom categories
-        for catName in pairs(data.customCategories) do
-            GetOrCreateBankBucket("__c__"..catName, "|cffffff00"..catName.."|r", true, catName)
-        end
-
+        -- Catégories (partagées avec l'inventaire via le store du personnage)
+        local slots = {}
         for itemID, agg in pairs(allItems) do
-            local slot = { id = itemID, count = agg.count, link = agg.link }
-            if itemToCustom[itemID] then
-                local bkt = GetOrCreateBankBucket("__c__"..itemToCustom[itemID],
-                    "|cffffff00"..itemToCustom[itemID].."|r", true, itemToCustom[itemID])
-                bkt.items[#bkt.items+1] = slot
-            else
-                local catInfo = ns.AVL_GetBlizzardCategory(itemID)
-                local key     = catInfo and catInfo.key or "B_AUTRE"
-                local label   = catInfo and catInfo.label or ns.L("CAT_AUTRE")
-                local bkt     = GetOrCreateBankBucket(key, label, false, nil)
-                bkt.items[#bkt.items+1] = slot
-            end
+            slots[#slots+1] = { id = itemID, count = agg.count, link = agg.link }
         end
+        local bankBuckets, bankBucketOrder = ns.Cat.Distribute(data, slots)
 
         -- Exposer pour le bouton engrenage
         ns.liveBankBuckets     = bankBuckets
         ns.liveBankBucketOrder = bankBucketOrder
 
-        -- Compat : alias pour le code DrawBankCategory ci-dessous
-        local buckets = {}
-        for k, bkt in pairs(bankBuckets) do buckets[k] = bkt.items end
+        local DnD = ns.CatDnD
 
-        local function DrawBankCategory(title, items, customCatName)
-            if not items or #items == 0 then return end
+        local function DrawBankCategory(key, title, items, customCatName)
 
             local titleBar = CreateFrame("Frame", nil, target, "BackdropTemplate")
             titleBar:SetHeight(26)
@@ -390,14 +357,7 @@ function ns.ShowBank(charName, realmName)
                 delBtn:SetScript("OnLeave", function(s) s.bg:SetColorTexture(0.5,0.1,0.1,0) end)
                 local cn = customCatName
                 delBtn:SetScript("OnClick", function()
-                    data.customCategories[cn] = nil
-                    if data.catOrder then
-                        local newOrder = {}
-                        for _, k in ipairs(data.catOrder) do
-                            if k ~= "__c__"..cn then newOrder[#newOrder+1] = k end
-                        end
-                        data.catOrder = newOrder
-                    end
+                    ns.Cat.RemoveCategory(data, cn)
                     refreshBank()
                 end)
             end
@@ -413,6 +373,7 @@ function ns.ShowBank(charName, realmName)
                 else b.countText:Hide() end
 
                 local cid, clink = item.id, item.link
+                if DnD then DnD.AttachItem(b, cid, data, refreshBank) end
                 b:SetScript("OnEnter", function(s)
                     if not ns.AVL_GetSelected() then
                         GameTooltip:SetOwner(s, "ANCHOR_RIGHT")
@@ -437,42 +398,20 @@ function ns.ShowBank(charName, realmName)
                 if col >= 14 then col = 0; row = row + 1 end
             end
 
-            local plusX = 20 + col * 35
-            local plusY  = baseY - row * 35
-            local catLabelStr = customCatName or title
-            local dropFn
-            if customCatName then
-                local cn = customCatName
-                dropFn = function(itemID)
-                    for _, catData in pairs(data.customCategories) do
-                        if catData.items then catData.items[itemID] = nil end
-                    end
-                    data.customCategories[cn] = data.customCategories[cn] or { items = {} }
-                    data.customCategories[cn].items[itemID] = true
-                    refreshBank()
-                end
-            else
-                dropFn = nil  -- cat menu removed
-            end
+            -- Slot "+" : dernier emplacement de la catégorie (drop d'un item)
+            if DnD then DnD.AddPlus(target, 20 + col*35, baseY - row*35, key, data, refreshBank) end
             baseY = baseY - ((row+1)*35) - 4
         end
 
-        -- Rendu dynamique : utilise les clés réelles trouvées dans buckets
-        -- Rendu : même logique que ShowBags — catOrder d'abord, puis le reste
-        local bankRendered = {}
-        for _, k in ipairs(data.catOrder or {}) do
+        -- Rendu : catOrder persisté d'abord, puis le reste (ns.Cat.Order)
+        for _, k in ipairs(ns.Cat.Order(data, bankBuckets, bankBucketOrder)) do
             local bkt = bankBuckets[k]
-            if bkt and #bkt.items > 0 and not bankRendered[k] then
-                bankRendered[k] = true
-                DrawBankCategory(bkt.label, bkt.items, bkt.name)
-            end
+            DrawBankCategory(k, bkt.label, bkt.items, bkt.name)
         end
-        for _, k in ipairs(bankBucketOrder) do
-            local bkt = bankBuckets[k]
-            if bkt and #bkt.items > 0 and not bankRendered[k] then
-                bankRendered[k] = true
-                DrawBankCategory(bkt.label, bkt.items, bkt.name)
-            end
+
+        if ns.CatManager then
+            ns.CatManager.Notify(data, refreshBank,
+                function() return ns.liveBankBuckets, ns.liveBankBucketOrder end)
         end
     end
 

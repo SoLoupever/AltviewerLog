@@ -4,9 +4,9 @@ local addonName, ns = ...
 -- BANQUE BATAILLON (Warband Bank)
 -- Extraite de Views.lua pour isoler la logique warband.
 -- Dépendances partagées via ns :
---   ns.AcquireButton, ns.GetIcon, ns.AVL_GetBlizzardCategory,
---   ns.AVL_CAT_CACHE, ns.AVL_GetSelected, ns.scrollChild,
---   ns.GetContentWidth, ns.ClearContent
+--   ns.AcquireButton, ns.GetIcon, ns.Cat (store/ordre/résolution),
+--   ns.AVL_GetSelected, ns.scrollChild, ns.GetContentWidth,
+--   ns.ClearContent (+ ns.CatDnD / ns.CatManager, optionnels)
 -- ====================================================
 
 function ns.ShowWarbandBank()
@@ -124,43 +124,32 @@ function ns.ShowWarbandBank()
     end
 
     -- ── Mode catégories ────────────────────────────────────────────
-    local wbCats = ns.DP_GetWarbandCustomCategories()
+    -- Store partagé avec la fenêtre de gestion et le drag & drop
+    -- (customCategories = AltViewerLogDB.warbandCustomCategories).
+    local store = ns.Cat.GetStore("warband")
     local refreshWarband = function() ns.ShowWarbandBank() end
+    local DnD = ns.CatDnD
 
-    -- Reverse lookup : itemID → nom de catégorie custom
-    local itemToCustom = {}
-    for catName, catData in pairs(wbCats) do
-        for itemID in pairs(catData.items or {}) do
-            itemToCustom[itemID] = catName
-        end
-    end
-
-    -- Buckets : un par catégorie custom + un par catégorie Blizzard
-    local buckets = {}
-    for catName in pairs(wbCats) do
-        buckets["__c__" .. catName] = {}
-    end
-
+    local slots = {}
     for itemID, agg in pairs(allItems) do
-        local slot = { id = itemID, count = agg.count, link = agg.link }
-        if itemToCustom[itemID] then
-            local key = "__c__" .. itemToCustom[itemID]
-            buckets[key] = buckets[key] or {}
-            buckets[key][#buckets[key] + 1] = slot
-        else
-            local catInfo = ns.AVL_GetBlizzardCategory(itemID)
-            local key     = catInfo and catInfo.key or "B_AUTRE"
-            buckets[key]  = buckets[key] or {}
-            buckets[key][#buckets[key] + 1] = slot
-        end
+        slots[#slots + 1] = { id = itemID, count = agg.count, link = agg.link }
+    end
+    local buckets, bucketOrder = ns.Cat.Distribute(store, slots)
+    ns.liveWarbandBuckets, ns.liveWarbandBucketOrder = buckets, bucketOrder
+    local getLive = function() return ns.liveWarbandBuckets, ns.liveWarbandBucketOrder end
+
+    -- Bouton "Ordre des catégories" (à gauche du bandeau d'or)
+    if ns.CatManager then
+        local gear = ns.CatManager.CreateGearButton(ns.scrollChild, function(s)
+            ns.ToggleCatOrderPanel(s, store, refreshWarband, getLive)
+        end)
+        gear:ClearAllPoints()
+        gear:SetPoint("TOPRIGHT", ns.scrollChild, "TOPRIGHT", (wbGold > 0) and -248 or -20, -19)
     end
 
-    -- Rendu des catégories
     local baseY = -60
 
-    local function DrawWarbandCategory(title_cat, items, customCatName)
-        if not items or #items == 0 then return end
-
+    local function DrawWarbandCategory(key, title_cat, items, customCatName)
         -- Barre de titre de catégorie
         local titleBar = CreateFrame("Frame", nil, ns.scrollChild)
         titleBar:SetSize(ns.GetContentWidth() - 20, 24)
@@ -189,7 +178,7 @@ function ns.ShowWarbandBank()
 
             local cn = customCatName
             delBtn:SetScript("OnClick", function()
-                wbCats[cn] = nil
+                ns.Cat.RemoveCategory(store, cn)
                 refreshWarband()
             end)
         end
@@ -209,6 +198,7 @@ function ns.ShowWarbandBank()
             end
 
             local cid, clink = item.id, item.link
+            if DnD then DnD.AttachItem(b, cid, store, refreshWarband) end
             b:SetScript("OnEnter", function(s)
                 if not ns.AVL_GetSelected() then
                     GameTooltip:SetOwner(s, "ANCHOR_RIGHT")
@@ -231,34 +221,18 @@ function ns.ShowWarbandBank()
             if col >= 14 then col = 0; row = row + 1 end
         end
 
+        -- Slot "+" : dernier emplacement de la catégorie (drop d'un item)
+        if DnD then DnD.AddPlus(ns.scrollChild, 20 + col * 35, baseY - row * 35, key, store, refreshWarband) end
         baseY = baseY - ((row + 1) * 35) - 12
     end
 
-    -- Catégories custom en premier
-    for catName in pairs(wbCats) do
-        DrawWarbandCategory("|cffffff00" .. catName .. "|r",
-            buckets["__c__" .. catName], catName)
+    -- catOrder persisté d'abord, puis le reste (ns.Cat.Order)
+    for _, key in ipairs(ns.Cat.Order(store, buckets, bucketOrder)) do
+        local bkt = buckets[key]
+        DrawWarbandCategory(key, bkt.label, bkt.items, bkt.name)
     end
 
-    -- Catégories Blizzard (dynamiques)
-    local rendered = {}
-    for catName in pairs(wbCats) do rendered["__c__" .. catName] = true end
-
-    for key, bkt in pairs(buckets) do
-        if bkt and #bkt > 0 and not rendered[key] and not key:find("^__c__") then
-            rendered[key] = true
-            local firstID = bkt[1] and bkt[1].id or 0
-            local catInfo = ns.AVL_CAT_CACHE[firstID]
-            local lbl     = catInfo and catInfo.label or key
-            DrawWarbandCategory(lbl, bkt, nil)
-        end
-    end
-
-    -- Catégories custom encore une fois (pour les items redéposés après coup)
-    for catName in pairs(wbCats) do
-        DrawWarbandCategory("|cffffff00" .. catName .. "|r",
-            buckets["__c__" .. catName], catName)
-    end
+    if ns.CatManager then ns.CatManager.Notify(store, refreshWarband, getLive) end
 
     ns.scrollChild:SetHeight(math.abs(baseY) + 50)
 end

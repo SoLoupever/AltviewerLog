@@ -7,7 +7,7 @@ local addonName, ns = ...
 --
 -- Ce qui vivait ici et a été extrait :
 --   ShowBags()        → ViewBags.lua
---   DrawBagsByCategory + panneaux → ViewCategories.lua
+--   DrawBagsByCategory → Categories.lua ; panneau → CategoryManager.lua
 --   ShowSettings()    → Settings.lua
 -- ====================================================
 
@@ -84,6 +84,7 @@ local IGNORED_KEYS = {
     profFileIDs=true, disable2DPreview=true,
     warbandCustomCategories=true, woodPanelEnabled=true,
     hiddenExpansions=true, hiddenProfessions=true, warbandGold=true,
+    warbandCatStore=true, guildCatStore=true,
 }
 ns.IGNORED_KEYS = IGNORED_KEYS
 
@@ -149,6 +150,7 @@ local function ReleaseActiveFrames()
         f:SetScript("OnClick",  nil)
         f:SetScript("OnEnter",  nil)
         f:SetScript("OnLeave",  nil)
+        if ns.CatDnD then ns.CatDnD.Detach(f) end
         table.insert(entry.pool, f)
     end
     activeFrames = {}
@@ -159,6 +161,7 @@ function ns.ClearContent()
     if not ns.scrollChild then return end
     AVL_Deselect()
     ReleaseActiveFrames()
+    if ns.CatDnD then ns.CatDnD.ReleaseFor(ns.scrollChild) end
 
     local regions = { ns.scrollChild:GetRegions() }
     for _, r in ipairs(regions) do if r.Hide then r:Hide() end end

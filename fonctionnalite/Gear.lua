@@ -49,6 +49,7 @@ local IGNORED_KEYS = {
     minimap=true, settings=true, warbandBank=true,
     profFileIDs=true, disable2DPreview=true,
     warbandCustomCategories=true, woodPanelEnabled=true,
+    warbandCatStore=true, guildCatStore=true,
 }
 
 local ICON_SIZE  = 42
