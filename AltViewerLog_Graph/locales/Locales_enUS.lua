@@ -7,6 +7,12 @@ pluginNs.locales["enUS"] = {
     BTN_GRAPH   = "Graph",
     STATS_TITLE = "Statistics: Playtime per Class (All Realms)",
     NO_DATA     = "No data available",
+    STATS_HEADING = "Statistics",
+    STATS_SUB = "Play time by class",
+    ALL_REALMS = "All realms",
+    STAT_TOTAL_TIME = "Total time",
+    STAT_TOP_CLASS = "Most played class",
+    STAT_CHARS = "Characters",
 
     -- Errors / debug
     ERR_API_MISSING = "ERROR: AltViewerLogAPI not found.",

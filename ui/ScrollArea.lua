@@ -45,7 +45,7 @@ function ns.SkinScrollBar(scrollFrame)
     end
 
     local function ThumbColor(alpha)
-        local b = ns._themeBorder or { 0.45, 0.15, 0.70 }
+        local b = ns.Theme.thumb
         thumbTex:SetColorTexture(b[1], b[2], b[3], alpha)
     end
     ThumbColor(0.55)
@@ -142,8 +142,8 @@ end
 local scrollFrame = CreateFrame("ScrollFrame", "AVL_ScrollFrame",
     ns.mainFrame, "UIPanelScrollFrameTemplate")
 ns.scrollFrame = scrollFrame
-scrollFrame:SetPoint("TOPLEFT",     ns._UI.sideBar,  "TOPRIGHT",     10, 0)
-scrollFrame:SetPoint("BOTTOMRIGHT", ns.mainFrame, "BOTTOMRIGHT", -22, 36)
+scrollFrame:SetPoint("TOPLEFT",     ns.contentPanel, "TOPLEFT",      6, -6)
+scrollFrame:SetPoint("BOTTOMRIGHT", ns.contentPanel, "BOTTOMRIGHT", -20, 6)
 
 ns.scrollChild = CreateFrame("Frame", nil, scrollFrame)
 ns.scrollChild:SetSize(650, 1)
@@ -151,7 +151,8 @@ scrollFrame:SetScrollChild(ns.scrollChild)
 ns.SkinScrollBar(scrollFrame)
 
 function ns.GetContentWidth()
-    return math.max(300, ns.mainFrame:GetWidth() - 200 - 10 - 22)
+    local L = ns.LAYOUT
+    return math.max(300, ns.mainFrame:GetWidth() - L.contentLeft - L.pad - 26)
 end
 ns.mainFrame:HookScript("OnSizeChanged", function()
     ns.scrollChild:SetWidth(ns.GetContentWidth())
@@ -164,13 +165,7 @@ end)
 ns.bankWin = CreateFrame("Frame", "AVL_BankWin", UIParent, "BackdropTemplate")
 ns.bankWin:SetSize(720, 540)
 ns.bankWin:SetPoint("CENTER", UIParent, "CENTER", 360, 0)
-ns.bankWin:SetBackdrop({
-    bgFile   = "Interface\\Buttons\\WHITE8x8",
-    edgeFile = "Interface\\Buttons\\WHITE8x8",
-    edgeSize = 1,
-})
-ns.bankWin:SetBackdropColor(0, 0, 0, 1)
-ns.bankWin:SetBackdropBorderColor(0.15, 0.15, 0.15, 1)
+ns.Skin.Frame(ns.bankWin, "window")
 ns.bankWin:SetMovable(true)
 ns.bankWin:EnableMouse(false)
 ns.bankWin:SetClampedToScreen(true)
@@ -178,12 +173,10 @@ ns.bankWin:SetFrameStrata("HIGH")
 ns.bankWin:Hide()
 table.insert(UISpecialFrames, "AVL_BankWin")
 
-local bankTitleBar = CreateFrame("Frame", nil, ns.bankWin, "BackdropTemplate")
-bankTitleBar:SetHeight(30)
+local bankTitleBar = CreateFrame("Frame", nil, ns.bankWin)
+bankTitleBar:SetHeight(ns.LAYOUT.titleH)
 bankTitleBar:SetPoint("TOPLEFT",  ns.bankWin, "TOPLEFT",  0, 0)
 bankTitleBar:SetPoint("TOPRIGHT", ns.bankWin, "TOPRIGHT", 0, 0)
-bankTitleBar:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8" })
-bankTitleBar:SetBackdropColor(0, 0, 0, 1)
 bankTitleBar:SetFrameLevel(ns.bankWin:GetFrameLevel() + 2)
 bankTitleBar:EnableMouse(true)
 bankTitleBar:RegisterForDrag("LeftButton")
@@ -196,15 +189,14 @@ bankTitleBar:SetScript("OnDragStop", function()
 end)
 
 ns.bankWin.titleText = bankTitleBar:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-ns.bankWin.titleText:SetPoint("LEFT", 14, 0)
-ns.bankWin.titleText:SetText("|cffcc88ffAltViewerLog|r |cffaaaaaa—|r |cff4da6ff" .. ns.L("BTN_BANK") .. "|r")
+ns.bankWin.titleText:SetPoint("LEFT", 16, 0)
+ns.bankWin.titleText:SetText("|cff" .. ns.Theme.title .. ns.L("UI_TITLE") .. "|r |cffaaaaaa-|r |cffffd100" .. ns.L("BTN_BANK") .. "|r")
 
-local bankClose = CreateFrame("Button", nil, bankTitleBar, "UIPanelCloseButton")
-bankClose:SetPoint("RIGHT", -5, 0)
-bankClose:SetScript("OnClick", function() ns.bankWin:Hide() end)
+local bankClose = ns.Skin.CloseButton(bankTitleBar, function() ns.bankWin:Hide() end)
+bankClose:SetPoint("RIGHT", -12, 0)
 
 local bankSF = CreateFrame("ScrollFrame", nil, ns.bankWin, "UIPanelScrollFrameTemplate")
-bankSF:SetPoint("TOPLEFT",     ns.bankWin, "TOPLEFT",     12, -40)
+bankSF:SetPoint("TOPLEFT",     ns.bankWin, "TOPLEFT",     12, -ns.LAYOUT.titleH - 4)
 bankSF:SetPoint("BOTTOMRIGHT", ns.bankWin, "BOTTOMRIGHT", -28,  10)
 
 ns.bankScrollChild = CreateFrame("Frame", nil, bankSF)

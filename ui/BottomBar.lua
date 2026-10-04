@@ -5,8 +5,7 @@ local addonName, ns = ...
 -- ====================================================
 
 -- ── 1. Constantes ─────────────────────────────────────────────────
-local BTN_H   = 28
-local BTN_PAD =  6
+local BTN_H   = 32
 
 ns.bottomBtns = ns.bottomBtns or {}
 
@@ -166,53 +165,16 @@ end
 local function MakeBottomBtn()
     local btn = CreateFrame("Button", nil, ns.bottomBar, "BackdropTemplate")
     btn:SetHeight(BTN_H)
-    btn:SetBackdrop({
-        bgFile   = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 1,
-    })
-    btn:SetBackdropColor(0.10, 0.10, 0.10, 1.0)
-    btn:SetBackdropBorderColor(0.28, 0.28, 0.28, 1)
+    ns.Skin.Button(btn, "bar")
 
-    btn:SetScript("OnEnter", function(self)
-        local b = ns._themeBorder or {0.30, 0.30, 0.30}
-        local t = AltViewerLogDB
-            and AltViewerLogDB.settings
-            and AltViewerLogDB.settings.theme or "default"
-        if t == "default" then
-            self:SetBackdropColor(0.20, 0.20, 0.20, 1)
-        else
-            self:SetBackdropColor(
-                b[1] * 0.30 + 0.05,
-                b[2] * 0.20 + 0.03,
-                b[3] * 0.35 + 0.06, 1)
-        end
-        self:SetBackdropBorderColor(
-            math.min(b[1] * 1.5, 1),
-            math.min(b[2] * 1.5, 1),
-            math.min(b[3] * 1.5, 1), 1)
+    btn:HookScript("OnEnter", function(self)
         if self._showTooltip then self._showTooltip(self) end
     end)
-
-    btn:SetScript("OnLeave", function(self)
-        local b = ns._themeBorder or {0.30, 0.30, 0.30}
-        local t = AltViewerLogDB
-            and AltViewerLogDB.settings
-            and AltViewerLogDB.settings.theme or "default"
-        if t == "default" then
-            self:SetBackdropColor(0.10, 0.10, 0.10, 1.0)
-        else
-            self:SetBackdropColor(
-                b[1] * 0.18 + 0.03,
-                b[2] * 0.12 + 0.03,
-                b[3] * 0.25 + 0.06, 1.0)
-        end
-        self:SetBackdropBorderColor(b[1], b[2], b[3], 1)
-        GameTooltip:Hide()
-    end)
+    btn:HookScript("OnLeave", function() GameTooltip:Hide() end)
 
     local fs = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     fs:SetPoint("CENTER")
+    fs:SetTextColor(unpack(ns.Theme.text))
     btn.fs = fs
 
     ns.bottomBtns[#ns.bottomBtns + 1] = btn
@@ -233,21 +195,20 @@ ns.bbChars._showTooltip = nil
 
 local function LayoutBtns()
     if not ns.mainFrame or not ns.bottomBar then return end
-    local W    = ns.mainFrame:GetWidth()
-    local btnW = math.floor((W - BTN_PAD * 4) / 3)
-    local posY = math.floor((36 - BTN_H) / 2)
+    local pad  = ns.LAYOUT.pad
+    local btnW = math.floor((ns.mainFrame:GetWidth() - pad * 4) / 3)
 
     ns.bbGold:ClearAllPoints()
     ns.bbGold:SetWidth(btnW)
-    ns.bbGold:SetPoint("LEFT",   ns.bottomBar, "LEFT",   BTN_PAD, posY)
+    ns.bbGold:SetPoint("LEFT",   ns.bottomBar, "LEFT",   pad, 0)
 
     ns.bbTime:ClearAllPoints()
     ns.bbTime:SetWidth(btnW)
-    ns.bbTime:SetPoint("CENTER", ns.bottomBar, "CENTER", 0,       posY)
+    ns.bbTime:SetPoint("CENTER", ns.bottomBar, "CENTER", 0, 0)
 
     ns.bbChars:ClearAllPoints()
     ns.bbChars:SetWidth(btnW)
-    ns.bbChars:SetPoint("RIGHT",  ns.bottomBar, "RIGHT", -BTN_PAD, posY)
+    ns.bbChars:SetPoint("RIGHT", ns.bottomBar, "RIGHT", -pad, 0)
 end
 
 ns.mainFrame:HookScript("OnSizeChanged", LayoutBtns)
@@ -275,20 +236,14 @@ ns.UpdateBottomBar = function()
     -- Total
     local grandTotal    = charTotal + wbDisplay
 
-    -- Bouton or
-    ns.bbGold.fs:SetText(
-        (ns.CC and ns.L and ns.CC(ns.L("TOTAL_GOLD")) or "Or")
-        .. "  " .. GetCoinTextureString(grandTotal))
-
-    -- Bouton temps
-    ns.bbTime.fs:SetText(
-        (ns.CC and ns.L and ns.CC(ns.L("TOTAL_TIME")) or "Temps")
-        .. "  " .. (ns.FormatTime and ns.FormatTime(CountTotalTime()) or "?"))
-
-    -- Bouton personnages
-    ns.bbChars.fs:SetText(
-        (ns.CC and ns.L and ns.CC(ns.L("TOTAL_CHARS")) or "Persos")
-        .. "  " .. CountTotalChars())
+    -- Libellé atténué + valeur claire (couleurs du thème actif)
+    local t   = ns.Theme
+    local dim = "|cff" .. ns.ColorHex(t.textDim)
+    local val = "|cff" .. ns.ColorHex(t.text)
+    ns.bbGold.fs:SetText(dim .. ns.L("TOTAL_GOLD") .. "|r  " .. GetCoinTextureString(grandTotal))
+    ns.bbTime.fs:SetText(dim .. ns.L("TOTAL_TIME") .. "|r  " .. val
+        .. (ns.FormatTime and ns.FormatTime(CountTotalTime()) or "?") .. "|r")
+    ns.bbChars.fs:SetText(dim .. ns.L("TOTAL_CHARS") .. "|r  " .. val .. CountTotalChars() .. "|r")
 end
 
 -- Stub legacy

@@ -10,43 +10,12 @@ local addonName, pluginNs = ...
 local core = _G.AltViewerLogAPI   -- dépendance déclarée dans le .toc
 
 -- ── Thème ────────────────────────────────────────────────────────
--- Couleur d'accent (bordure) du thème actif dans AltViewerLog,
--- avec repli si le thème n'est pas encore défini.
-local DEFAULT_BORDER = { 0.45, 0.15, 0.70 }
+-- Couleurs et skin viennent du core (ns.Theme / ns.Skin).
+local BLUE = { 0.30, 0.65, 1.00 }   -- titre de la vue (maquette)
+
 function pluginNs.GetThemeBorder()
-    return (core and core._themeBorder) or DEFAULT_BORDER
+    return core.Theme.heading
 end
-
--- Fond teinté à partir de la couleur d'accent du thème (version
--- assombrie, même principe que Theme.lua). intensity (0-1) : plus
--- vif au survol.
-function pluginNs.GetThemeFill(intensity)
-    intensity = intensity or 0.35
-    local b = pluginNs.GetThemeBorder()
-    return b[1]*intensity + 0.05, b[2]*intensity + 0.05, b[3]*intensity + 0.05
-end
-
--- Léger relief (dégradé + filet clair) sur un bouton avec backdrop.
--- Appelé une fois par frame physique (frames recyclées via les pools
--- ci-dessous) pour ne jamais empiler les textures entre deux refresh.
-local function ApplySheen(frame)
-    if frame._sheen then return end
-    local grad = frame:CreateTexture(nil, "ARTWORK")
-    grad:SetPoint("TOPLEFT", 1, -1)
-    grad:SetPoint("BOTTOMRIGHT", -1, 1)
-    if grad.SetGradient and CreateColor then
-        grad:SetGradient("VERTICAL", CreateColor(1, 1, 1, 0.16), CreateColor(1, 1, 1, 0))
-    elseif grad.SetGradientAlpha then
-        grad:SetGradientAlpha("VERTICAL", 1, 1, 1, 0.16, 1, 1, 1, 0)
-    end
-    local topLine = frame:CreateTexture(nil, "OVERLAY")
-    topLine:SetPoint("TOPLEFT", 1, -1)
-    topLine:SetPoint("TOPRIGHT", -1, -1)
-    topLine:SetHeight(1)
-    topLine:SetColorTexture(1, 1, 1, 0.35)
-    frame._sheen = true
-end
-pluginNs.ApplySheen = ApplySheen
 
 -- ── Pool de frames (réutilisées entre affichages) ──────────────────
 local iconPool    = {}
@@ -57,9 +26,13 @@ local function AcquireIcon(parent)
     if f then
         f:SetParent(parent); f:ClearAllPoints()
     else
-        f = CreateFrame("Button", nil, parent)
-        f.ico = f:CreateTexture(nil, "BACKGROUND"); f.ico:SetAllPoints()
-        f.countText = f:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
+        f = CreateFrame("Button", nil, parent, "BackdropTemplate")
+        f:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1 })
+        f:SetBackdropColor(0, 0, 0, 0.6)
+        f.ico = f:CreateTexture(nil, "ARTWORK")
+        f.ico:SetPoint("TOPLEFT", 1, -1); f.ico:SetPoint("BOTTOMRIGHT", -1, 1)
+        f.ico:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+        f.countText = f:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
         f.countText:SetPoint("BOTTOMRIGHT", -2, 2)
     end
     f:Show()
@@ -86,7 +59,7 @@ local activeCatHeaders = {}
 local function AcquireCatHeader(parent)
     local fs = table.remove(catHeaderPool)
     if not fs then
-        fs = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        fs = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     end
     fs:Show()
     activeCatHeaders[#activeCatHeaders + 1] = fs
@@ -124,8 +97,9 @@ function pluginNs.GetOrCreateSelectorFrame()
 
     local scroll = CreateFrame("ScrollFrame", "AVL_GuildSelector", core.mainFrame, "UIPanelScrollFrameTemplate")
     scroll:SetWidth(SELECTOR_W)
-    scroll:SetPoint("TOPRIGHT",    core.mainFrame, "TOPRIGHT",    0, -30)
-    scroll:SetPoint("BOTTOMRIGHT", core.mainFrame, "BOTTOMRIGHT", 0,  36)
+    local L = core.LAYOUT or { pad = 0, titleH = 30, bottomH = 36 }
+    scroll:SetPoint("TOPRIGHT",    core.mainFrame, "TOPRIGHT",    -(L.pad + 4), -(L.titleH + 6))
+    scroll:SetPoint("BOTTOMRIGHT", core.mainFrame, "BOTTOMRIGHT", -(L.pad + 4),  L.bottomH + 6)
 
     local inner = CreateFrame("Frame", nil, scroll)
     inner:SetWidth(SELECTOR_W); inner:SetHeight(1)
@@ -137,55 +111,33 @@ function pluginNs.GetOrCreateSelectorFrame()
 
     -- Remplace RefreshSelectorButtons pour utiliser l'inner scroll
     local _origRefresh = RefreshSelectorButtons
+    -- Titre « GUILDES » (créé une fois)
+    local head = inner:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    head:SetPoint("TOPLEFT", 4, -6)
+    pluginNs._selectorHead = head
+
     RefreshSelectorButtons = function()
         for _, btn in ipairs(selectorButtons) do btn:Hide() end
         wipe(selectorButtons)
+        head:SetText(pluginNs.L("GUILDS_HEADING"):upper())
+        head:SetTextColor(unpack(core.Theme.textDim))
         if not ViewerLogDB.guilds then return end
 
-        local offsetY = -10
+        local offsetY = -28
         for guildKey, gData in pairs(ViewerLogDB.guilds) do
             if type(gData) == "table" and gData.guildName then
                 local btn = CreateFrame("Button", nil, inner, "BackdropTemplate")
-                btn:SetSize(SELECTOR_W - 20, 32)
-                btn:SetPoint("TOPLEFT", inner, "TOPLEFT", 5, offsetY)
-                btn:SetBackdrop({
-                    bgFile   = "Interface\\Buttons\\WHITE8x8",
-                    edgeFile = "Interface\\Buttons\\WHITE8x8",
-                    edgeSize = 1,
-                })
-                btn:SetNormalFontObject("GameFontNormalSmall")
-                btn:SetText(gData.guildName)
-                ApplySheen(btn)
+                btn:SetSize(SELECTOR_W - 24, 36)
+                btn:SetPoint("TOPLEFT", inner, "TOPLEFT", 4, offsetY)
+                core.Skin.Button(btn)
+                btn._active = (guildKey == currentGuildKey)
+                core.Skin.Paint(btn)
 
-                local isActive = (guildKey == currentGuildKey)
-                if isActive then
-                    local b = pluginNs.GetThemeBorder()
-                    local r, g, bl = pluginNs.GetThemeFill(0.35)
-                    btn:SetBackdropColor(r, g, bl, 1)
-                    btn:SetBackdropBorderColor(b[1], b[2], b[3], 1)
-                else
-                    btn:SetBackdropColor(0.12, 0.12, 0.12, 1)
-                    btn:SetBackdropBorderColor(0.30, 0.30, 0.30, 1)
-                end
-
-                btn:SetScript("OnEnter", function(self)
-                    local r, g, bl = pluginNs.GetThemeFill(0.5)
-                    self:SetBackdropColor(r, g, bl, 1)
-                    local b = pluginNs.GetThemeBorder()
-                    self:SetBackdropBorderColor(b[1], b[2], b[3], 1)
-                end)
-                btn:SetScript("OnLeave", function(self)
-                    local active = (currentGuildKey == guildKey)
-                    if active then
-                        local b = pluginNs.GetThemeBorder()
-                        local r, g, bl = pluginNs.GetThemeFill(0.35)
-                        self:SetBackdropColor(r, g, bl, 1)
-                        self:SetBackdropBorderColor(b[1], b[2], b[3], 1)
-                    else
-                        self:SetBackdropColor(0.12, 0.12, 0.12, 1)
-                        self:SetBackdropBorderColor(0.30, 0.30, 0.30, 1)
-                    end
-                end)
+                local fs = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+                fs:SetPoint("CENTER")
+                fs:SetText(gData.guildName)
+                local c = btn._active and core.Theme.gold or core.Theme.text
+                fs:SetTextColor(c[1], c[2], c[3])
 
                 local capturedKey = guildKey
                 btn:SetScript("OnClick", function()
@@ -196,7 +148,7 @@ function pluginNs.GetOrCreateSelectorFrame()
                 end)
 
                 selectorButtons[#selectorButtons + 1] = btn
-                offsetY = offsetY - 38
+                offsetY = offsetY - 44
             end
         end
         inner:SetHeight(math.max(1, math.abs(offsetY) + 10))
@@ -211,52 +163,40 @@ local tabBtnPool   = {}   -- pool de réutilisation, comme iconPool
 
 local TAB_BTN_W = 110
 local TAB_BTN_H = 40
+local TAB_Y     = -112
 
 local function ReleaseTabs()
     for _, tb in ipairs(tabButtons) do
         tb:Hide(); tb:ClearAllPoints()
-        tb:SetScript("OnEnter",    nil)
-        tb:SetScript("OnLeave",    nil)
         tb:SetScript("OnMouseDown", nil)
+        if tb._arrow then tb._arrow:Hide() end
+        tb._onEnter = nil
         tabBtnPool[#tabBtnPool + 1] = tb
     end
     wipe(tabButtons)
 end
 
 -- 8 = nombre max d'onglets de banque de guilde côté Blizzard.
--- La pagination (flèche + tooltip) reste en place si cette limite
--- change un jour.
 local MAX_VISIBLE_TABS = 8
-local MAX_TAB_W        = 140   -- largeur maximale par onglet
+local MAX_TAB_W        = 140
 
 local function AcquireTab(parent, w, h)
-    w = w or TAB_BTN_W
-    h = h or TAB_BTN_H
     local tb = table.remove(tabBtnPool)
     if tb then
         tb:SetParent(parent); tb:ClearAllPoints()
-        -- Réinitialiser le backdrop à neutre (sera re-coloré juste après par le caller)
-        tb:SetBackdropColor(0.10, 0.10, 0.10, 1)
-        tb:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
-        -- Remettre à zéro les textes réutilisables
-        if tb._nameFS   then tb._nameFS:SetText(""); tb._nameFS:Show() end
     else
-        tb = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-        tb:EnableMouse(true)
-        tb:SetBackdrop({
-            bgFile   = "Interface\\Buttons\\WHITE8x8",
-            edgeFile = "Interface\\Buttons\\WHITE8x8",
-            edgeSize = 1,
-        })
-        -- Créer les FontStrings une seule fois, stockées sur le frame
-        tb._nameFS = tb:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        tb._nameFS:SetPoint("TOPLEFT", 6, -6)
-
-        ApplySheen(tb)
+        tb = CreateFrame("Button", nil, parent, "BackdropTemplate")
+        core.Skin.Button(tb)
+        tb._nameFS = tb:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        tb._nameFS:SetPoint("LEFT", 14, 0)
+        tb._nameFS:SetJustifyH("LEFT")
+        tb._nameFS:SetWordWrap(false)
     end
-    tb:SetSize(w, h)
-    -- Mettre à jour la largeur du nameFS selon la taille actuelle
-    tb._nameFS:SetWidth(w - 10)
+    tb._active, tb._hover = false, false
+    tb._nameFS:SetText("")
+    tb._nameFS:Show()
+    tb:SetSize(w or TAB_BTN_W, h or TAB_BTN_H)
+    tb._nameFS:SetWidth((w or TAB_BTN_W) - 20)
     tb:Show()
     return tb
 end
@@ -265,21 +205,18 @@ local function RefreshTabButtons(gData, scrollChild)
     ReleaseTabs()
     if not gData or not gData.tabs then return end
 
-    -- Compter les onglets réels
     local totalTabs = 0
     for i = 1, 8 do if gData.tabs[i] then totalTabs = i end end
 
-    -- Largeur dynamique : distribuée entre les onglets visibles, plafonnée à MAX_TAB_W
     local contentW = core and core.GetContentWidth and core.GetContentWidth() or 660
+    local avail = contentW - 40
     local visibleCount = math.min(totalTabs, MAX_VISIBLE_TABS)
     local computedW = visibleCount > 0
-        and math.floor((contentW - 40 - (visibleCount - 1) * 6) / visibleCount)
+        and math.floor((avail - (visibleCount - 1) * 8) / visibleCount)
         or TAB_BTN_W
     local tabW = math.min(computedW, MAX_TAB_W)
 
-    -- Décalage d'affichage : quel onglet commence la fenêtre visible
     if not gData._tabOffset then gData._tabOffset = 0 end
-    -- S'assurer que l'onglet actif est toujours visible
     if currentTabIndex > gData._tabOffset + MAX_VISIBLE_TABS then
         gData._tabOffset = currentTabIndex - MAX_VISIBLE_TABS
     elseif currentTabIndex <= gData._tabOffset then
@@ -295,44 +232,16 @@ local function RefreshTabButtons(gData, scrollChild)
         local tabData = gData.tabs[i]
         if tabData then
             local tb = AcquireTab(scrollChild, tabW, TAB_BTN_H)
-            tb:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", offsetX, -92)
-
-            -- Réutilise les FontStrings créées une seule fois dans AcquireTab
+            tb:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", offsetX, TAB_Y)
             tb._nameFS:SetText(tabData.name or pluginNs.L("TAB_LABEL"):format(i))
-            tb._nameFS:SetJustifyH("LEFT")
 
-            local isActive = (i == currentTabIndex)
-            if isActive then
-                local b = pluginNs.GetThemeBorder()
-                local r, g, bl = pluginNs.GetThemeFill(0.35)
-                tb:SetBackdropColor(r, g, bl, 1)
-                tb:SetBackdropBorderColor(b[1], b[2], b[3], 1)
-            else
-                tb:SetBackdropColor(0.10, 0.10, 0.10, 1)
-                tb:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
-            end
+            tb._active = (i == currentTabIndex)
+            core.Skin.Paint(tb)
+            local c = tb._active and core.Theme.gold or core.Theme.text
+            tb._nameFS:SetTextColor(c[1], c[2], c[3])
 
-            local capturedIndex = i   -- déclaré ICI pour être accessible dans OnLeave et OnMouseDown
-            tb:SetScript("OnEnter", function(self)
-                local r, g, bl = pluginNs.GetThemeFill(0.5)
-                self:SetBackdropColor(r, g, bl, 1)
-                local b = pluginNs.GetThemeBorder()
-                self:SetBackdropBorderColor(b[1], b[2], b[3], 1)
-            end)
-            tb:SetScript("OnLeave", function(self)
-                -- Compare avec capturedIndex (pas i, qui peut changer en fin de boucle)
-                if currentTabIndex == capturedIndex then
-                    local b = pluginNs.GetThemeBorder()
-                    local r, g, bl = pluginNs.GetThemeFill(0.35)
-                    self:SetBackdropColor(r, g, bl, 1)
-                    self:SetBackdropBorderColor(b[1], b[2], b[3], 1)
-                else
-                    self:SetBackdropColor(0.10, 0.10, 0.10, 1)
-                    self:SetBackdropBorderColor(0.25, 0.25, 0.25, 1)
-                end
-            end)
-
-            tb:SetScript("OnMouseDown", function(self, btn)
+            local capturedIndex = i
+            tb:SetScript("OnMouseDown", function(_, btn)
                 if btn == "LeftButton" then
                     currentTabIndex = capturedIndex
                     DrawGuildView()
@@ -340,60 +249,52 @@ local function RefreshTabButtons(gData, scrollChild)
             end)
 
             tabButtons[#tabButtons + 1] = tb
-            offsetX = offsetX + tabW + 6
+            offsetX = offsetX + tabW + 8
         end
     end
 
     -- Flèche de défilement (si plus de MAX_VISIBLE_TABS onglets)
     if totalTabs > MAX_VISIBLE_TABS then
-        local arrowBtn = AcquireTab(scrollChild, TAB_BTN_H, TAB_BTN_H)  -- carré
-        arrowBtn:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", offsetX, -92)
-        do
-            local b = pluginNs.GetThemeBorder()
-            arrowBtn:SetBackdropColor(0.10, 0.10, 0.15, 1)
-            arrowBtn:SetBackdropBorderColor(b[1], b[2], b[3], 1)
-        end
+        local arrowBtn = AcquireTab(scrollChild, TAB_BTN_H, TAB_BTN_H)
+        arrowBtn:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", offsetX, TAB_Y)
+        arrowBtn._nameFS:Hide()
+        core.Skin.Paint(arrowBtn)
 
-        local arrowTex = arrowBtn:CreateTexture(nil, "ARTWORK")
-        arrowTex:SetSize(28, 28)
-        arrowTex:SetPoint("CENTER", 0, 0)
-        arrowTex:SetAtlas("housing-floor-arrow-right-default")
-
-        -- Tooltip : liste les onglets cachés
-        arrowBtn:SetScript("OnEnter", function(self)
-            self:SetBackdropColor(0.20, 0.12, 0.32, 1)
-            local b = pluginNs.GetThemeBorder()
-            self:SetBackdropBorderColor(b[1], b[2], b[3], 1)
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:ClearLines()
-            GameTooltip:AddLine("|cffffff00" .. pluginNs.L("OTHER_TABS_HEADER") .. "|r")
-            for j = endTab + 1, totalTabs do
-                local td = gData.tabs[j]
-                if td then
-                    local active = (j == currentTabIndex)
-                    local col = active and "|cffc060ff" or "|cff888888"
-                    GameTooltip:AddLine(col .. (td.name or pluginNs.L("TAB_LABEL"):format(j)) .. "|r")
+        if not arrowBtn._arrow then
+            arrowBtn._arrow = arrowBtn:CreateTexture(nil, "ARTWORK")
+            arrowBtn._arrow:SetSize(28, 28)
+            arrowBtn._arrow:SetPoint("CENTER", 0, 0)
+            arrowBtn._arrow:SetAtlas("housing-floor-arrow-right-default")
+            arrowBtn:HookScript("OnEnter", function(self)
+                if not self._hiddenTabs then return end
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                GameTooltip:ClearLines()
+                GameTooltip:AddLine(pluginNs.L("OTHER_TABS_HEADER"), 1, 0.82, 0)
+                for _, line in ipairs(self._hiddenTabs) do
+                    GameTooltip:AddLine(line.text, line.active and 1 or 0.6, line.active and 0.82 or 0.6, line.active and 0 or 0.6)
                 end
+                GameTooltip:Show()
+            end)
+            arrowBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
+        end
+        arrowBtn._arrow:Show()
+        arrowBtn._hiddenTabs = {}
+        for j = endTab + 1, totalTabs do
+            local td = gData.tabs[j]
+            if td then
+                arrowBtn._hiddenTabs[#arrowBtn._hiddenTabs + 1] = {
+                    text = td.name or pluginNs.L("TAB_LABEL"):format(j), active = (j == currentTabIndex) }
             end
-            GameTooltip:Show()
-        end)
-        arrowBtn:SetScript("OnLeave", function(self)
-            local b = pluginNs.GetThemeBorder()
-            self:SetBackdropColor(0.10, 0.10, 0.15, 1)
-            self:SetBackdropBorderColor(b[1], b[2], b[3], 1)
-            GameTooltip:Hide()
-        end)
-        arrowBtn:SetScript("OnMouseDown", function(self, btn)
+        end
+        arrowBtn:SetScript("OnMouseDown", function(_, btn)
             if btn == "LeftButton" then
-                -- Cycle parmi les onglets cachés
-                local next = endTab + 1
-                if next > totalTabs then next = 1 end
-                currentTabIndex = next
-                gData._tabOffset = math.max(0, next - MAX_VISIBLE_TABS)
+                local nxt = endTab + 1
+                if nxt > totalTabs then nxt = 1 end
+                currentTabIndex = nxt
+                gData._tabOffset = math.max(0, nxt - MAX_VISIBLE_TABS)
                 DrawGuildView()
             end
         end)
-
         tabButtons[#tabButtons + 1] = arrowBtn
     end
 end
@@ -409,47 +310,27 @@ DrawGuildView = function()
     local scrollChild = core.scrollChild
     local L = pluginNs.L
 
-    -- ── En-tête ────────────────────────────────────────────────────
-    -- Bandeau de fond + filet d'accent thème, posés directement sur
-    -- scrollChild et mis en cache (masqués par ClearContent(), pas
-    -- recréés à chaque refresh).
-    local HEADER_H = 78
-    local header = scrollChild._guildeLogHeaderPanel
-    if not header then
-        header = scrollChild:CreateTexture(nil, "BACKGROUND")
-        scrollChild._guildeLogHeaderPanel = header
-    end
-    header:ClearAllPoints()
-    header:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 0, 0)
-    header:SetSize(core and core.GetContentWidth and core.GetContentWidth() or 660, HEADER_H)
-    header:SetColorTexture(0.02, 0.02, 0.04, 0.72)
-    header:Show()
-
-    local headerEdge = scrollChild._guildeLogHeaderEdge
-    if not headerEdge then
-        headerEdge = scrollChild:CreateTexture(nil, "BORDER")
-        scrollChild._guildeLogHeaderEdge = headerEdge
-    end
-    headerEdge:ClearAllPoints()
-    headerEdge:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, 0)
-    headerEdge:SetPoint("TOPRIGHT", header, "BOTTOMRIGHT", 0, 0)
-    headerEdge:SetHeight(2)
-    do
-        local b = pluginNs.GetThemeBorder()
-        headerEdge:SetColorTexture(b[1], b[2], b[3], 0.9)
-    end
-    headerEdge:Show()
-
-    -- Ligne 1 : titre, seul sur sa ligne
+    -- ── En-tête : titre (bleu), guilde / chef, date, filet ───────────
+    local T = core.Theme
     local title = scrollChild._guildeLogTitle
     if not title then
-        title = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        title = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
         scrollChild._guildeLogTitle = title
     end
     title:ClearAllPoints()
-    title:SetPoint("TOPLEFT", 20, -16)
-    title:SetText(L("GUILDE_TITLE")); title:SetTextColor(0, 0.67, 1)
+    title:SetPoint("TOPLEFT", 20, -14)
+    title:SetText(L("GUILDE_TITLE")); title:SetTextColor(BLUE[1], BLUE[2], BLUE[3])
     title:Show()
+
+    local rule = scrollChild._guildeLogRule
+    if not rule then
+        rule = core.Skin.Rule(scrollChild)
+        scrollChild._guildeLogRule = rule
+    end
+    rule:ClearAllPoints()
+    rule:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", 20, -96)
+    rule:SetWidth(math.max(100, (core.GetContentWidth and core.GetContentWidth() or 660) - 40))
+    rule:Show()
 
     if not ViewerLogDB.guilds or not next(ViewerLogDB.guilds) then
         local nd = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontDisable")
@@ -473,39 +354,38 @@ DrawGuildView = function()
     -- droit de guildLabel pour s'adapter à la longueur du nom)
     local guildLabel = scrollChild._guildeLogGuildLabel
     if not guildLabel then
-        guildLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        guildLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         scrollChild._guildeLogGuildLabel = guildLabel
     end
     guildLabel:ClearAllPoints()
-    guildLabel:SetPoint("TOPLEFT", 20, -42)
-    guildLabel:SetText(L("GUILD_NAME_LABEL"):format(gData.guildName or "?"))
+    guildLabel:SetPoint("TOPLEFT", 20, -48)
+    guildLabel:SetText(L("GUILD_NAME_LABEL"):format("|cffffffff" .. (gData.guildName or "?") .. "|r"))
+    guildLabel:SetTextColor(T.text[1], T.text[2], T.text[3])
     guildLabel:Show()
 
     local leaderLabel = scrollChild._guildeLogLeaderLabel
     if not leaderLabel then
-        leaderLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        leaderLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         scrollChild._guildeLogLeaderLabel = leaderLabel
     end
     leaderLabel:ClearAllPoints()
-    leaderLabel:SetPoint("LEFT", guildLabel, "RIGHT", 20, 0)
-    if gData.guildLeader then
-        leaderLabel:SetText(L("GUILD_LEADER_LABEL"):format(gData.guildLeader))
-        leaderLabel:SetTextColor(1, 0.40, 0.70)  -- rose
-    else
-        leaderLabel:SetText(L("GUILD_LEADER_LABEL"):format("?"))
-        leaderLabel:SetTextColor(0.5, 0.5, 0.5)
-    end
+    leaderLabel:SetPoint("LEFT", guildLabel, "RIGHT", 28, 0)
+    -- Libellé clair, nom du chef en rose
+    leaderLabel:SetTextColor(T.text[1], T.text[2], T.text[3])
+    leaderLabel:SetText(L("GUILD_LEADER_LABEL"):format(
+        "|cffff66b3" .. (gData.guildLeader or "?") .. "|r"))
     leaderLabel:Show()
 
     -- Ligne 3 : date de dernière mise à jour, sur sa propre ligne
     -- (la largeur de la ligne 2 varie selon les noms)
     local scanLabel = scrollChild._guildeLogScanLabel
     if not scanLabel then
-        scanLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        scanLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         scrollChild._guildeLogScanLabel = scanLabel
     end
     scanLabel:ClearAllPoints()
-    scanLabel:SetPoint("TOPLEFT", 20, -64)
+    scanLabel:SetPoint("TOPLEFT", 20, -72)
+    scanLabel:SetTextColor(T.textDim[1], T.textDim[2], T.textDim[3])
     if gData.scanTime and gData.scanTime > 0 then
         local dateStr = date("%d/%m/%Y %H:%M", gData.scanTime)
         scanLabel:SetText(L("SCAN_DATE"):format(dateStr))
@@ -535,16 +415,20 @@ DrawGuildView = function()
     end
     table.sort(sortedSlots, function(a, b) return a.slot < b.slot end)
 
-    local MAX_COLS = 14
-    local baseY = -147
+    local MAX_COLS = math.max(6, math.floor(((core.GetContentWidth and core.GetContentWidth() or 660) - 40) / 38))
+    local baseY = -176
 
     -- Placement d'un item : centralise icône + tooltip, partagé par les
     -- deux modes d'affichage.
     -- dnd = { store=, refresh= } en mode catégorie : l'icône devient draggable.
     local function DrawItemButton(entry, x, y, dnd)
         local b = AcquireIcon(scrollChild)
-        b:SetSize(32, 32)
+        b:SetSize(34, 34)
         b:SetPoint("TOPLEFT", x, y)
+        local q = C_Item and C_Item.GetItemQualityByID and C_Item.GetItemQualityByID(entry.link or entry.id)
+        local qc = q and ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[q]
+        if qc then b:SetBackdropBorderColor(qc.r, qc.g, qc.b, 1)
+        else b:SetBackdropBorderColor(0.35, 0.35, 0.35, 1) end
 
         -- Icône via GetItemIcon / C_Item.GetItemIconByID
         local icon = (C_Item and C_Item.GetItemIconByID and C_Item.GetItemIconByID(entry.id))
@@ -584,11 +468,11 @@ DrawGuildView = function()
         -- ── Grille simple (identique à ShowWarbandBank) ────────────────
         local col, row = 0, 0
         for _, entry in ipairs(sortedSlots) do
-            DrawItemButton(entry, 20 + col * 35, baseY - row * 35)
+            DrawItemButton(entry, 20 + col * 38, baseY - row * 38)
             col = col + 1
             if col >= MAX_COLS then col = 0; row = row + 1 end
         end
-        scrollChild:SetHeight(math.abs(baseY) + ((row + 1) * 35) + 60)
+        scrollChild:SetHeight(math.abs(baseY) + ((row + 1) * 38) + 60)
     else
         -- ── Mode catégorie : moteur partagé du core (core.Cat) ────────
         -- Même store / ordre / drag & drop que sacs, banque et bataillon ;
@@ -606,27 +490,28 @@ DrawGuildView = function()
                 core.ToggleCatOrderPanel(s, store, refresh, getLive)
             end)
             gear:ClearAllPoints()
-            gear:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", -30, -16)
+            gear:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", (core.GetContentWidth and core.GetContentWidth() or 660) - 40, -16)
         end
 
         for _, key in ipairs(core.Cat.Order(store, buckets, order)) do
             local bkt = buckets[key]
             local hdr = AcquireCatHeader(scrollChild)
             hdr:SetPoint("TOPLEFT", 20, baseY)
-            hdr:SetText(bkt.label .. " |cff4da6ff(" .. #bkt.items .. ")|r")
+            hdr:SetText(bkt.label:upper() .. " |cff4da6ff(" .. #bkt.items .. ")|r")
+            hdr:SetTextColor(T.heading[1], T.heading[2], T.heading[3])
             baseY = baseY - 26
 
             local col, row = 0, 0
             for _, entry in ipairs(bkt.items) do
-                DrawItemButton(entry, 20 + col * 35, baseY - row * 35, dnd)
+                DrawItemButton(entry, 20 + col * 38, baseY - row * 38, dnd)
                 col = col + 1
                 if col >= MAX_COLS then col = 0; row = row + 1 end
             end
             -- Slot "+" : dernier emplacement de la catégorie (drop d'un item)
             if core.CatDnD then
-                core.CatDnD.AddPlus(scrollChild, 20 + col * 35, baseY - row * 35, key, store, refresh)
+                core.CatDnD.AddPlus(scrollChild, 20 + col * 38, baseY - row * 38, key, store, refresh)
             end
-            baseY = baseY - ((row + 1) * 35) - 12
+            baseY = baseY - ((row + 1) * 38) - 14
         end
         scrollChild:SetHeight(math.abs(baseY) + 60)
         if core.CatManager then core.CatManager.Notify(store, refresh, getLive) end

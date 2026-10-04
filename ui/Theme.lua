@@ -1,121 +1,248 @@
 local addonName, ns = ...
 
 -- ====================================================
--- THEME — Système de thème visuel de AltViewerLog
--- Rôle UNIQUE : définir les thèmes et appliquer
--- les couleurs à tous les éléments de l'UI.
+-- THEME — Thèmes visuels (AltViewerLog / Blizzard)
+-- Rôle UNIQUE : palettes + registre de skin + ApplyTheme.
 --
--- Dépendances (construites par UI.lua avant ce fichier) :
---   ns.mainFrame, ns.bottomBar, ns.titleText
---   ns.sideButtons, ns.bottomBtns
--- Les variables privées (mainBG, sideBar) sont injectées
--- via ns._UI (voir UI.lua).
+-- Shell statique (fenêtre, sidebar, barre du bas…) : frames
+-- enregistrées via ns.Skin.*, repeintes par ApplyTheme.
+-- Vues dynamiques : lisent ns.Theme à la construction.
 -- ====================================================
 
-local BACKDROP_DEFAULT  = { bgFile = "Interface\\Buttons\\WHITE8x8" }
-local BACKDROP_XALATH   = {
-    bgFile   = "Interface\\AddOns\\AltViewerLog\\media\\background\\AVL_Background_Xalath.png",
-    tile=false, tileSize=0, edgeSize=0,
-    insets = { left=0, right=0, top=0, bottom=0 },
-}
-local BACKDROP_SYLVANAS = {
-    bgFile   = "Interface\\AddOns\\AltViewerLog\\media\\background\\AVL_Background_Sylvanas.png",
-    tile=false, tileSize=0, edgeSize=0,
-    insets = { left=0, right=0, top=0, bottom=0 },
+local WHITE = "Interface\\Buttons\\WHITE8x8"
+local floor = math.floor
+local unpack = unpack
+
+local BACKDROP = { bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 }
+
+-- { bg, edge, hoverBg, hoverEdge }
+local THEMES = {
+    avl = {
+        key      = "avl",
+        title    = "4da6ff",
+        sub      = "ff40a0",
+        accent   = { 0.55, 0.45, 0.18 },
+        thumb    = { 0.65, 0.52, 0.18 },
+        text     = { 0.92, 0.92, 0.92 },
+        textDim  = { 0.60, 0.60, 0.62 },
+        heading  = { 0.95, 0.76, 0.25 },
+        gold     = { 1.00, 0.82, 0.00 },
+        sideText = nil, -- couleur de classe
+        roles = {
+            window = { { 0.03, 0.03, 0.04, 1 }, { 0.30, 0.24, 0.10, 1 } },
+            panel  = { { 0.04, 0.04, 0.05, 1 }, { 0.22, 0.19, 0.10, 1 } },
+            bar    = { { 0.035, 0.035, 0.045, 1 }, { 0.22, 0.19, 0.10, 1 },
+                       { 0.08, 0.08, 0.10, 1 }, { 0.60, 0.50, 0.20, 1 } },
+            card   = { { 0.05, 0.05, 0.065, 1 }, { 0.16, 0.15, 0.12, 1 },
+                       { 0.09, 0.09, 0.12, 1 }, { 0.35, 0.30, 0.15, 1 } },
+            input  = { { 0.02, 0.02, 0.03, 1 }, { 0.30, 0.26, 0.12, 1 },
+                       { 0.04, 0.04, 0.05, 1 }, { 1.00, 0.82, 0.00, 1 } },
+            button = { { 0.02, 0.02, 0.03, 1 }, { 0.30, 0.26, 0.12, 1 },
+                       { 0.07, 0.07, 0.09, 1 }, { 0.60, 0.50, 0.20, 1 } },
+            active = { { 0.10, 0.08, 0.04, 1 }, { 1.00, 0.82, 0.00, 1 } },
+        },
+    },
+    blizzard = {
+        key      = "blizzard",
+        title    = "4da6ff",
+        sub      = "ff40a0",
+        accent   = { 0.55, 0.44, 0.22 },
+        thumb    = { 0.60, 0.48, 0.22 },
+        text     = { 0.93, 0.88, 0.75 },
+        textDim  = { 0.62, 0.57, 0.47 },
+        heading  = { 0.98, 0.78, 0.30 },
+        gold     = { 1.00, 0.82, 0.00 },
+        sideText = { 0.89, 0.82, 0.65 },
+        roles = {
+            window = { { 0.075, 0.06, 0.045, 1 }, { 0.42, 0.33, 0.17, 1 } },
+            panel  = { { 0.055, 0.045, 0.035, 1 }, { 0.30, 0.24, 0.13, 1 } },
+            bar    = { { 0.08, 0.065, 0.05, 1 }, { 0.33, 0.27, 0.15, 1 },
+                       { 0.12, 0.10, 0.07, 1 }, { 0.65, 0.52, 0.25, 1 } },
+            card   = { { 0.09, 0.075, 0.06, 1 }, { 0.24, 0.19, 0.10, 1 },
+                       { 0.13, 0.11, 0.08, 1 }, { 0.45, 0.36, 0.18, 1 } },
+            input  = { { 0.04, 0.035, 0.03, 1 }, { 0.30, 0.24, 0.13, 1 },
+                       { 0.06, 0.05, 0.04, 1 }, { 1.00, 0.82, 0.00, 1 } },
+            button = { { 0.06, 0.05, 0.04, 1 }, { 0.30, 0.24, 0.13, 1 },
+                       { 0.12, 0.10, 0.07, 1 }, { 0.65, 0.52, 0.25, 1 } },
+            active = { { 0.14, 0.11, 0.05, 1 }, { 1.00, 0.82, 0.00, 1 } },
+        },
+    },
 }
 
-local THEME_BORDER = {
-    default  = { 0.30, 0.30, 0.30 },
-    xalath   = { 0.45, 0.15, 0.70 },
-    sylvanas = { 0.70, 0.05, 0.05 },
-}
+ns.THEMES      = THEMES
+ns.THEME_ORDER = { "avl", "blizzard" }
+ns.Theme       = THEMES.avl
 
--- Couleur du titre "AltViewerLog", découplée de la bordure : en thème
--- normal on veut du bleu, pas le gris de la bordure. Une teinte absente
--- ici retombe sur la couleur de bordure (xalath/sylvanas suivent donc
--- l'accent du thème, inchangés).
-local THEME_TITLE = {
-    default = "4da6ff",
-}
+local function Hex(c)
+    return string.format("%02x%02x%02x",
+        floor(c[1] * 255), floor(c[2] * 255), floor(c[3] * 255))
+end
+ns.ColorHex = Hex
 
--- Couleur du sous-titre "By Soloup_ever" par thème.
-local THEME_SUBTITLE = {
-    default  = "ff40a0",
-    xalath   = "ff3333",
-    sylvanas = "b266ff",
-}
+-- Ancien thème (default / xalath / sylvanas) → avl
+local function Normalize(key)
+    return THEMES[key] and key or "avl"
+end
 
+-- ── Couleur de classe du joueur ───────────────────────────────────
+local function ClassColor()
+    local _, classFile = UnitClass("player")
+    local col = classFile and RAID_CLASS_COLORS and RAID_CLASS_COLORS[classFile]
+    if col then return { col.r, col.g, col.b } end
+    return { 0.80, 0.53, 1.00 }
+end
+
+-- ── Listeners (modules qui doivent réagir à un changement) ────────
+local listeners = {}
+function ns.RegisterThemeListener(fn)
+    if type(fn) == "function" then listeners[#listeners + 1] = fn end
+end
+
+-- ── Registre de skin ──────────────────────────────────────────────
+local registry = setmetatable({}, { __mode = "k" })
+local sideBtns = {}
+local Skin = {}
+ns.Skin = Skin
+
+local function Paint(f)
+    local t    = ns.Theme
+    local role = f._avlRole
+    local r    = t.roles[role]
+    if not r then return end
+    local bg, edge = r[1], r[2]
+    if role == "button" and f._active then
+        bg, edge = t.roles.active[1], t.roles.active[2]
+    elseif f._hover and r[3] then
+        bg, edge = r[3], r[4]
+    end
+    f:SetBackdropColor(unpack(bg))
+    f:SetBackdropBorderColor(unpack(edge))
+end
+Skin.Paint = Paint
+
+function Skin.Frame(f, role)
+    f:SetBackdrop(BACKDROP)
+    f._avlRole = role
+    registry[f] = true
+    Paint(f)
+    return f
+end
+
+function Skin.Button(f, role)
+    Skin.Frame(f, role or "button")
+    f:HookScript("OnEnter", function(self) self._hover = true;  Paint(self) end)
+    f:HookScript("OnLeave", function(self) self._hover = false; Paint(self) end)
+    return f
+end
+
+-- Libellé de bouton de sidebar : FontString propre au skin (la couleur
+-- ne repasse pas par les états du Button). Les codes |cff…|r passés
+-- par les plugins sont retirés, la couleur est gérée ici.
+local function PaintSideText(btn)
+    local fs = btn._avlLabel
+    if not fs then return end
+    local t = ns.Theme
+    local c = btn._active and t.gold or t.sideText or ClassColor()
+    fs:SetTextColor(c[1], c[2], c[3])
+end
+
+function Skin.SideButton(btn)
+    if btn._avlSide then return btn end
+    btn._avlSide = true
+    Skin.Button(btn)
+
+    -- Texte éventuellement déjà posé par la factory d'un plugin : repris
+    -- dans notre FontString, le natif est masqué.
+    local initial = btn:GetText()
+    local nfs = btn:GetFontString()
+    if nfs then nfs:SetText(""); nfs:Hide() end
+
+    local fs = btn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    fs:SetPoint("CENTER")
+    btn._avlLabel = fs
+
+    btn.SetText = function(self, txt)
+        txt = (txt or ""):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+        self._text = txt
+        fs:SetText(txt)
+        PaintSideText(self)
+    end
+    btn.GetText = function(self) return self._text or "" end
+    if initial and initial ~= "" then btn:SetText(initial) end
+
+    sideBtns[#sideBtns + 1] = btn
+    return btn
+end
+
+-- Filet horizontal 1px (couleur de titre du thème), à ancrer par l'appelant
+function Skin.Rule(parent)
+    local tx = parent:CreateTexture(nil, "ARTWORK")
+    local h = ns.Theme.heading
+    tx:SetHeight(1)
+    tx:SetColorTexture(h[1], h[2], h[3], 0.35)
+    return tx
+end
+
+-- Bouton fermer carré (« X ») commun à toutes les fenêtres
+function Skin.CloseButton(parent, onClick)
+    local b = CreateFrame("Button", nil, parent, "BackdropTemplate")
+    b:SetSize(26, 26)
+    Skin.Button(b)
+    local fs = b:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    fs:SetPoint("CENTER", 0, 1)
+    fs:SetText("X")
+    local function Tint(c) fs:SetTextColor(c[1], c[2], c[3]) end
+    Tint(ns.Theme.text)
+    b:SetScript("OnClick", onClick)
+    b:HookScript("OnEnter", function() Tint(ns.Theme.gold) end)
+    b:HookScript("OnLeave", function() Tint(ns.Theme.text) end)
+    ns.RegisterThemeListener(function(t) Tint(t.text) end)
+    return b
+end
+
+-- Bouton actif de la sidebar (un seul à la fois)
+function Skin.SetActive(btn)
+    for _, b in ipairs(sideBtns) do
+        if b._active or b == btn then
+            b._active = (b == btn)
+            Paint(b)
+            PaintSideText(b)
+        end
+    end
+end
+
+-- ── ApplyTheme ────────────────────────────────────────────────────
 function ns.ApplyTheme(theme)
+    local key = Normalize(theme)
     AltViewerLogDB.settings = AltViewerLogDB.settings or {}
-    AltViewerLogDB.settings.theme = theme
+    AltViewerLogDB.settings.theme = key
 
-    local border = THEME_BORDER[theme] or THEME_BORDER.default
-    ns._themeBorder = border
-    local br, bg, bb = border[1], border[2], border[3]
+    local t = THEMES[key]
+    ns.Theme = t
 
-    local hex = string.format("%02x%02x%02x",
-        math.floor(br*255), math.floor(bg*255), math.floor(bb*255))
-    ns._themeHex = hex
-
-    local titleHex = THEME_TITLE[theme] or hex
-    local subHex   = THEME_SUBTITLE[theme] or THEME_SUBTITLE.default
-    ns._themeTitleHex = titleHex
+    -- Exports conservés pour les plugins (accent de bordure / titre)
+    ns._themeBorder   = t.accent
+    ns._themeHex      = Hex(t.accent)
+    ns._themeTitleHex = t.title
 
     if ns.titleText then
-        ns.titleText:SetText("|cff"..titleHex.."AltViewerLog|r |cff"..subHex.."By Soloup_ever|r")
+        ns.titleText:SetText("|cff" .. t.title .. ns.L("UI_TITLE") .. "|r  |cff"
+            .. t.sub .. ns.L("UI_AUTHOR") .. "|r")
     end
 
-    for _, btn in ipairs(ns.sideButtons or {}) do
-        btn:SetBackdropBorderColor(br, bg, bb, 0.85)
-    end
+    for f in pairs(registry) do Paint(f) end
+    for _, b in ipairs(sideBtns) do PaintSideText(b) end
 
-    -- Pouces de scrollbar (ui/ScrollArea.lua) : suivent l'accent du
-    -- thème ; seule la teinte change, l'alpha de repos (0.55) reste
-    -- celle gérée par ScrollArea.lua (survol/drag).
     for _, thumbTex in ipairs(ns.scrollBarThumbs or {}) do
-        thumbTex:SetColorTexture(br, bg, bb, 0.55)
+        thumbTex:SetColorTexture(t.thumb[1], t.thumb[2], t.thumb[3], 0.55)
     end
 
-    local bgR, bgG, bgB
-    if theme == "default" then
-        bgR, bgG, bgB = 0.10, 0.10, 0.10
-    else
-        bgR = br*0.18 + 0.03
-        bgG = bg*0.12 + 0.03
-        bgB = bb*0.25 + 0.06
-    end
-    for _, btn in ipairs(ns.bottomBtns or {}) do
-        btn:SetBackdropColor(bgR, bgG, bgB, 1.0)
-        btn:SetBackdropBorderColor(br, bg, bb, 1)
-    end
+    if ns.UpdateBottomBar then ns.UpdateBottomBar() end
+    for _, fn in ipairs(listeners) do fn(t) end
+end
 
-    -- Accès aux frames privées de UI.lua
-    local UI = ns._UI or {}
-
-    -- Séparateur vertical sidebar/contenu (ui/Sidebar.lua) : même
-    -- teinte que les bordures de boutons, un peu plus sombre pour
-    -- rester discret (c'est un simple filet de 1px, pas un accent).
-    if UI.divider then
-        UI.divider:SetColorTexture(br * 0.55, bg * 0.55, bb * 0.55, 0.80)
-    end
-
-    if theme == "xalath" then
-        ns.mainFrame:SetBackdrop(BACKDROP_XALATH)
-        ns.mainFrame:SetBackdropColor(1, 1, 1, 1)
-        if UI.mainBG  then UI.mainBG:SetBackdropColor(0, 0, 0, 0) end
-        if UI.sideBar then UI.sideBar:SetBackdropColor(0, 0, 0, 0.55) end
-        if ns.bottomBar then ns.bottomBar:SetBackdropColor(0, 0, 0, 0.85) end
-    elseif theme == "sylvanas" then
-        ns.mainFrame:SetBackdrop(BACKDROP_SYLVANAS)
-        ns.mainFrame:SetBackdropColor(1, 1, 1, 1)
-        if UI.mainBG  then UI.mainBG:SetBackdropColor(0, 0, 0, 0) end
-        if UI.sideBar then UI.sideBar:SetBackdropColor(0, 0, 0, 0.55) end
-        if ns.bottomBar then ns.bottomBar:SetBackdropColor(0, 0, 0, 0.85) end
-    else
-        ns.mainFrame:SetBackdrop(BACKDROP_DEFAULT)
-        ns.mainFrame:SetBackdropColor(0, 0, 0, 1)
-        if UI.mainBG  then UI.mainBG:SetBackdropColor(0, 0, 0, 1) end
-        if UI.sideBar then UI.sideBar:SetBackdropColor(0, 0, 0, 1) end
-        if ns.bottomBar then ns.bottomBar:SetBackdropColor(0, 0, 0, 1) end
-    end
+-- Thème courant (clé normalisée)
+function ns.GetThemeKey()
+    local s = AltViewerLogDB and AltViewerLogDB.settings
+    return Normalize(s and s.theme)
 end

@@ -33,13 +33,7 @@ function ns.ShowWarbandBank()
         local goldFrame = CreateFrame("Frame", nil, ns.scrollChild, "BackdropTemplate")
         goldFrame:SetSize(220, 26)
         goldFrame:SetPoint("TOPRIGHT", ns.scrollChild, "TOPRIGHT", -20, -17)
-        goldFrame:SetBackdrop({
-            bgFile   = "Interface\\Buttons\\WHITE8x8",
-            edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1,
-        })
-        goldFrame:SetBackdropColor(0.05, 0.05, 0.08, 1)
-        local br, bg, bb = unpack(ns._themeBorder or { 0.45, 0.15, 0.70 })
-        goldFrame:SetBackdropBorderColor(br, bg, bb, 0.8)
+        ns.Skin.Frame(goldFrame, "bar")
 
         local goldLabel = goldFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         goldLabel:SetPoint("LEFT", 8, 0)

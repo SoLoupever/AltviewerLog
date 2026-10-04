@@ -7,6 +7,25 @@ ns.locales = {}
 -- ====================================================
 ns.locales["frFR"] = {
     -- Paramètres & gestion
+    -- Interface / thèmes
+    UI_TITLE         = "ALTVIEWERLOG",
+    UI_AUTHOR        = "By Soloup_ever",
+    LANG_NAME_FR     = "Français",
+    LANG_NAME_EN     = "English",
+    THEME_NAME_AVL      = "AltViewerLog",
+    THEME_NAME_BLIZZARD = "Blizzard",
+    REALM_CHAR_COUNT = "%d personnages enregistrés",
+    CHAR_LEVEL       = "Niv %d",
+    CHAR_ILVL        = "ilvl %d",
+    PLAYED_LABEL     = "Temps de jeu : %s",
+    GEAR_TITLE       = "Stuff & Gear",
+    TIME_AGO_DH      = "il y a %dj %dh",
+    TIME_AGO_HM      = "il y a %dh %dm",
+    TIME_AGO_M       = "il y a %dm",
+    TIME_DH          = "%dj %dh",
+    TIME_HM          = "%dh %dm",
+    TIME_M           = "%dm",
+
     SETTINGS_TITLE   = "Paramètres et Gestion",
     SORT_POP         = "Afficher les serveurs les plus peuplés en haut",
     LANG_TITLE       = "Langue de l'addon :",

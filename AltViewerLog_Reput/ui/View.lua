@@ -25,8 +25,8 @@ local NAME_W     = 200   -- largeur colonne nom
 local REACTION_W = 140   -- largeur colonne réaction/renom (droite)
 local ROW_H      = 22    -- hauteur d'une ligne
 local ROW_GAP    = 3     -- espace entre les lignes
-local MARGIN_L   = 20    -- marge gauche
-local HEADER_H   = 72    -- espace réservé au-dessus de la liste
+local MARGIN_L   = 22    -- marge gauche
+local HEADER_H   = 96    -- espace réservé au-dessus de la liste
 
 -- ── Couleurs par niveau de réaction ──────────────────────────────
 local REACTION_COLOR = {
@@ -40,12 +40,14 @@ local REACTION_COLOR = {
     [8] = { 0.80, 0.40, 1.00 },   -- Exalté     violet
 }
 -- Couleur spéciale pour les factions majeures (renom)
-local MAJOR_COLOR = { 0.40, 0.80, 1.00 }    -- bleu ciel
+local MAJOR_COLOR = { 0.40, 0.80, 1.00 }    -- bleu ciel (texte renom)
+local MAJOR_BAR   = { 0.89, 0.67, 0.00 }    -- or (barre renom)
+local ACCENT      = { 0.60, 0.32, 0.85 }    -- violet (titre, en-têtes)
 local PARAGON_BAR = { 1.00, 0.75, 0.00 }    -- or (barre paragon)
 
 -- ── Catégories par extension ──────────────────────────────────────
-local EXP_HEADER_H     = 22
-local EXP_HEADER_COLOR = { 1.00, 1.00, 1.00 }   -- blanc
+local EXP_HEADER_H     = 26
+local EXP_HEADER_COLOR = { 0.90, 0.86, 0.95 }
 
 -- ── Pools ───────────────────────────────────────────────────────────
 -- Les objets (FontString/Texture/Frame) sont créés une seule fois puis
@@ -60,44 +62,47 @@ local rowPool,       rowUsed       = {}, 0
 local function HideUnusedPoolSlots()
     for i = rowUsed + 1, #rowPool do
         local s = rowPool[i]
-        s.nameBgBorder:Hide(); s.nameBg:Hide(); s.nameFS:Hide(); s.bg:Hide(); s.fill:Hide(); s.rightFS:Hide(); s.hit:Hide()
+        s.accent:Hide(); s.nameFS:Hide(); s.bg:Hide(); s.fill:Hide(); s.rightFS:Hide(); s.hit:Hide()
     end
     for i = expHeaderUsed + 1, #expHeaderPool do
         local s = expHeaderPool[i]
-        s.bg:Hide(); s.fs:Hide()
+        s.bg:Hide(); s.acc:Hide(); s.fs:Hide()
     end
 end
 
 local function DrawExpansionHeader(scrollChild, rowY, barW, label)
     local totalW = NAME_W + barW + REACTION_W
-    local textH  = EXP_HEADER_H - 4
+    local T = core.Theme
 
     expHeaderUsed = expHeaderUsed + 1
     local slot = expHeaderPool[expHeaderUsed]
     if not slot then
         slot = {}
-        slot.bg = scrollChild:CreateTexture(nil, "BACKGROUND")
-        slot.bg:SetColorTexture(0.08, 0.06, 0.14, 0.90)
-
-        slot.fs = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        slot.bg  = scrollChild:CreateTexture(nil, "BACKGROUND")
+        slot.acc = scrollChild:CreateTexture(nil, "ARTWORK")
+        slot.fs  = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         slot.fs:SetJustifyH("LEFT")
         slot.fs:SetJustifyV("MIDDLE")
-        slot.fs:SetTextColor(EXP_HEADER_COLOR[1], EXP_HEADER_COLOR[2], EXP_HEADER_COLOR[3])
-
         expHeaderPool[expHeaderUsed] = slot
     end
 
     slot.bg:ClearAllPoints()
-    slot.bg:SetPoint("TOPLEFT", MARGIN_L - 5, rowY)
-    slot.bg:SetSize(totalW + 5, textH)
+    slot.bg:SetPoint("TOPLEFT", MARGIN_L - 6, rowY)
+    slot.bg:SetSize(totalW + 6, EXP_HEADER_H)
+    slot.bg:SetColorTexture(ACCENT[1] * 0.22 + 0.04, ACCENT[2] * 0.14 + 0.04, ACCENT[3] * 0.30 + 0.05, 1)
+
+    slot.acc:ClearAllPoints()
+    slot.acc:SetPoint("TOPLEFT", MARGIN_L - 6, rowY)
+    slot.acc:SetSize(3, EXP_HEADER_H)
+    slot.acc:SetColorTexture(ACCENT[1], ACCENT[2], ACCENT[3], 1)
 
     slot.fs:ClearAllPoints()
-    slot.fs:SetPoint("TOPLEFT", MARGIN_L + 4, rowY)
-    slot.fs:SetSize(totalW, textH)
-    slot.fs:SetText(label)
+    slot.fs:SetPoint("TOPLEFT", MARGIN_L + 8, rowY)
+    slot.fs:SetSize(totalW, EXP_HEADER_H)
+    slot.fs:SetText(label:upper())
+    slot.fs:SetTextColor(EXP_HEADER_COLOR[1], EXP_HEADER_COLOR[2], EXP_HEADER_COLOR[3])
 
-    slot.bg:Show()
-    slot.fs:Show()
+    slot.bg:Show(); slot.acc:Show(); slot.fs:Show()
 end
 
 -- ── État courant de la vue ────────────────────────────────────────
@@ -194,11 +199,7 @@ local function DrawRow(scrollChild, rowY, barW, fid, d)
     local slot = rowPool[rowUsed]
     if not slot then
         slot = {}
-        slot.nameBgBorder = scrollChild:CreateTexture(nil, "BACKGROUND", nil, -8)
-        slot.nameBgBorder:SetColorTexture(0.32, 0.16, 0.48, 0.55)
-
-        slot.nameBg = scrollChild:CreateTexture(nil, "BACKGROUND", nil, -7)
-        slot.nameBg:SetColorTexture(0.05, 0.03, 0.10, 0.75)
+        slot.accent = scrollChild:CreateTexture(nil, "BACKGROUND")
 
         slot.nameFS = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         slot.nameFS:SetJustifyH("LEFT")
@@ -206,7 +207,6 @@ local function DrawRow(scrollChild, rowY, barW, fid, d)
         slot.nameFS:SetWordWrap(false)
 
         slot.bg = scrollChild:CreateTexture(nil, "BACKGROUND")
-        slot.bg:SetColorTexture(0.12, 0.12, 0.15, 1)
 
         slot.fill = scrollChild:CreateTexture(nil, "ARTWORK")
 
@@ -220,31 +220,19 @@ local function DrawRow(scrollChild, rowY, barW, fid, d)
         rowPool[rowUsed] = slot
     end
 
-    -- ── Nom ───────────────────────────────────────────────────────
-    -- Hauteur volontairement plus petite que ROW_H (au lieu de toute
-    -- la hauteur de ligne) : avec ROW_GAP = 3, une puce pleine hauteur
-    -- laissait un écart trop fin pour se voir entre deux lignes,
-    -- donnant l'impression d'un bloc continu plutôt que de puces
-    -- séparées. La bordure (nameBgBorder, 1px visible tout autour)
-    -- renforce la délimitation de chaque puce.
-    local NAME_BG_H = ROW_H - 6
-    local nameBgTop = rowY - (ROW_H - NAME_BG_H) / 2
-
-    slot.nameBgBorder:ClearAllPoints()
-    slot.nameBgBorder:SetPoint("TOPLEFT",     MARGIN_L - 5, nameBgTop + 1)
-    slot.nameBgBorder:SetPoint("BOTTOMRIGHT", MARGIN_L + NAME_W - 7, nameBgTop - NAME_BG_H + 1)
-    slot.nameBgBorder:Show()
-
-    slot.nameBg:ClearAllPoints()
-    slot.nameBg:SetPoint("TOPLEFT",     MARGIN_L - 4, nameBgTop)
-    slot.nameBg:SetPoint("BOTTOMRIGHT", MARGIN_L + NAME_W - 8, nameBgTop - NAME_BG_H)
-    slot.nameBg:Show()
+    -- ── Nom (texte clair, filet d'accent à gauche) ───────────────
+    local T = core.Theme
+    slot.accent:ClearAllPoints()
+    slot.accent:SetPoint("TOPLEFT", MARGIN_L - 6, rowY)
+    slot.accent:SetSize(2, ROW_H)
+    slot.accent:SetColorTexture(ACCENT[1], ACCENT[2], ACCENT[3], 0.55)
+    slot.accent:Show()
 
     slot.nameFS:ClearAllPoints()
-    slot.nameFS:SetPoint("TOPLEFT", MARGIN_L, rowY)
-    slot.nameFS:SetSize(NAME_W - 6, ROW_H)
+    slot.nameFS:SetPoint("TOPLEFT", MARGIN_L + 4, rowY)
+    slot.nameFS:SetSize(NAME_W - 10, ROW_H)
     slot.nameFS:SetText(name)
-    slot.nameFS:SetTextColor(0.55, 0.85, 1.00)   -- bleu clair, plus lumineux
+    slot.nameFS:SetTextColor(T.text[1], T.text[2], T.text[3])
 
     -- ── Barre de progression ──────────────────────────────────────
     local barX = MARGIN_L + NAME_W
@@ -252,6 +240,7 @@ local function DrawRow(scrollChild, rowY, barW, fid, d)
     slot.bg:ClearAllPoints()
     slot.bg:SetPoint("TOPLEFT", barX, rowY - 4)
     slot.bg:SetSize(barW, ROW_H - 8)
+    slot.bg:SetColorTexture(T.roles.input[1][1], T.roles.input[1][2], T.roles.input[1][3], 1)
 
     -- Remplissage
     if pct > 0 then
@@ -261,8 +250,10 @@ local function DrawRow(scrollChild, rowY, barW, fid, d)
         slot.fill:SetSize(fillW, ROW_H - 8)
         if isParagon then
             slot.fill:SetColorTexture(PARAGON_BAR[1], PARAGON_BAR[2], PARAGON_BAR[3], 0.85)
+        elseif d.isMajor then
+            slot.fill:SetColorTexture(MAJOR_BAR[1], MAJOR_BAR[2], MAJOR_BAR[3], 0.95)
         else
-            slot.fill:SetColorTexture(r, g, b, 0.80)
+            slot.fill:SetColorTexture(r, g, b, 0.90)
         end
         slot.fill:Show()
     else
@@ -420,16 +411,27 @@ local function DrawReputView()
     rowUsed, expHeaderUsed = 0, 0
 
     -- ── Titre ─────────────────────────────────────────────────────
+    local T = core.Theme
     local title = scrollChild._reputTitle
     if not title then
-        title = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        title = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
         scrollChild._reputTitle = title
-        title:SetTextColor(0.75, 0.40, 1.00)
     end
     title:ClearAllPoints()
-    title:SetPoint("TOPLEFT", MARGIN_L, -20)
+    title:SetPoint("TOPLEFT", MARGIN_L, -14)
     title:SetText(L("REPUT_TITLE"))
+    title:SetTextColor(0.75, 0.40, 1.00)
     title:Show()
+
+    local rule = scrollChild._reputRule
+    if not rule then
+        rule = core.Skin.Rule(scrollChild)
+        scrollChild._reputRule = rule
+    end
+    rule:ClearAllPoints()
+    rule:SetPoint("TOPLEFT", scrollChild, "TOPLEFT", MARGIN_L - 6, -76)
+    rule:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", -12, -76)
+    rule:Show()
 
     -- ── Vérification ViewerLog ────────────────────────────────────
     if not _G.ViewerLogAPI or not _G.ViewerLogAPI.IsReady() then
@@ -461,7 +463,7 @@ local function DrawReputView()
     -- ── Nom du personnage + bouton sélecteur ──────────────────────
     local charLabel = scrollChild._reputCharLabel
     if not charLabel then
-        charLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        charLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         scrollChild._reputCharLabel = charLabel
     end
     charLabel:ClearAllPoints()
@@ -485,25 +487,18 @@ local function DrawReputView()
     if not selBtn then
         selBtn = CreateFrame("Button", nil, scrollChild, "BackdropTemplate")
         scrollChild._reputSelBtn = selBtn
-        selBtn:SetSize(22, 22)
-        selBtn:SetBackdrop({
-            bgFile   = "Interface\\Buttons\\WHITE8x8",
-            edgeFile = "Interface\\Buttons\\WHITE8x8",
-            edgeSize = 1,
-        })
-        selBtn:SetBackdropColor(0.15, 0.08, 0.30, 0.90)
-        selBtn:SetBackdropBorderColor(0.60, 0.30, 1.00, 0.80)
+        selBtn:SetSize(28, 28)
+        core.Skin.Button(selBtn)
         selBtn.ico = selBtn:CreateTexture(nil, "ARTWORK")
-        selBtn.ico:SetAllPoints()
+        selBtn.ico:SetPoint("TOPLEFT", 4, -4)
+        selBtn.ico:SetPoint("BOTTOMRIGHT", -4, 4)
         selBtn.ico:SetTexture("Interface\\FriendsFrame\\UI-Toast-FriendOnlineIcon")
         selBtn:SetScript("OnEnter", function(s)
-            s:SetBackdropColor(0.25, 0.12, 0.50, 1)
             GameTooltip:SetOwner(s, "ANCHOR_LEFT")
             GameTooltip:AddLine(core.L and core.L("CHAR_SWITCH_TT") or pluginNs.L("CHAR_SWITCH_TT"), 1, 1, 1)
             GameTooltip:Show()
         end)
         selBtn:SetScript("OnLeave", function(s)
-            s:SetBackdropColor(0.15, 0.08, 0.30, 0.90)
             GameTooltip:Hide()
         end)
         selBtn:SetScript("OnClick", function(s)
@@ -517,7 +512,7 @@ local function DrawReputView()
         end)
     end
     selBtn:ClearAllPoints()
-    selBtn:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", -5, -5)
+    selBtn:SetPoint("TOPRIGHT", scrollChild, "TOPRIGHT", -14, -18)
     selBtn:Show()
 
     -- ── Données manquantes ────────────────────────────────────────

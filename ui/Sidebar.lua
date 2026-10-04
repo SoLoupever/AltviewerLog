@@ -5,22 +5,15 @@ local addonName, ns = ...
 -- Rôle UNIQUE : créer la sidebar et tous ses boutons.
 -- ====================================================
 
-local sideBar = CreateFrame("Frame", "AVL_SideBar", ns.mainFrame, "BackdropTemplate")
-sideBar:SetWidth(200)
-sideBar:SetPoint("TOPLEFT",     ns.mainFrame, "TOPLEFT",     0, -30)
-sideBar:SetPoint("BOTTOMLEFT",  ns.mainFrame, "BOTTOMLEFT",  0,  36)
-sideBar:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8" })
-sideBar:SetBackdropColor(0, 0, 0, 1)
+local LAYOUT = ns.LAYOUT
 
--- Séparateur vertical entre sidebar et contenu
-local divider = ns.mainFrame:CreateTexture(nil, "ARTWORK")
-divider:SetWidth(1)
-divider:SetPoint("TOPLEFT",    sideBar, "TOPRIGHT",    0, 0)
-divider:SetPoint("BOTTOMLEFT", sideBar, "BOTTOMRIGHT", 0, 0)
-divider:SetColorTexture(0.20, 0.08, 0.40, 0.80)
+local sideBar = CreateFrame("Frame", "AVL_SideBar", ns.mainFrame, "BackdropTemplate")
+sideBar:SetWidth(LAYOUT.sideW)
+sideBar:SetPoint("TOPLEFT",    ns.mainFrame, "TOPLEFT",    LAYOUT.pad, -LAYOUT.titleH)
+sideBar:SetPoint("BOTTOMLEFT", ns.mainFrame, "BOTTOMLEFT", LAYOUT.pad,  LAYOUT.bottomH)
+ns.Skin.Frame(sideBar, "panel")
 ns._UI = ns._UI or {}
 ns._UI.sideBar = sideBar
-ns._UI.divider = divider
 
 -- ── Couleur de classe ─────────────────────────────────────────────
 local function GetClassHex()
@@ -38,29 +31,14 @@ ns.CC = CC
 -- ── Factory bouton ────────────────────────────────────────────────
 ns.sideButtons = {}
 
+local BTN_W, BTN_H, BTN_GAP = LAYOUT.sideW - 24, 34, 8
+
 local function CreateMenuButton(label, anchorFrame, offsetY)
     local btn = CreateFrame("Button", nil, sideBar, "BackdropTemplate")
-    btn:SetSize(160, 35)
+    btn:SetSize(BTN_W, BTN_H)
     btn:SetPoint("TOP", anchorFrame, "BOTTOM", 0, offsetY)
+    ns.Skin.SideButton(btn)
     btn:SetText(label)
-    btn:SetNormalFontObject("GameFontNormal")
-    btn:SetBackdrop({
-        bgFile   = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 2,
-    })
-    btn:SetBackdropColor(0, 0, 0, 1)
-    btn:SetBackdropBorderColor(0.45, 0.15, 0.70, 0.85)
-    btn:SetScript("OnEnter", function(self)
-        self:SetBackdropColor(0.10, 0.10, 0.10, 1)
-        local b = ns._themeBorder or {0.65, 0.35, 1.0}
-        self:SetBackdropBorderColor(b[1], b[2], b[3], 1)
-    end)
-    btn:SetScript("OnLeave", function(self)
-        self:SetBackdropColor(0, 0, 0, 1)
-        local b = ns._themeBorder or {0.45, 0.15, 0.70}
-        self:SetBackdropBorderColor(b[1], b[2], b[3], 0.85)
-    end)
     ns.sideButtons[#ns.sideButtons + 1] = btn
     return btn
 end
@@ -87,29 +65,16 @@ ns.CloseAllPopups = CloseAllPopups  -- exposé pour les sous-modules
 -- ── Boutons dans l'ordre ──────────────────────────────────────────
 -- Premier bouton ancré sur la sidebar elle-même
 ns.btnSearch = CreateFrame("Button", nil, sideBar, "BackdropTemplate")
-ns.btnSearch:SetSize(160, 35)
-ns.btnSearch:SetPoint("TOP", sideBar, "TOP", 0, -20)
-ns.btnSearch:SetNormalFontObject("GameFontNormal")
-ns.btnSearch:SetBackdrop({ bgFile="Interface\\Buttons\\WHITE8x8", edgeFile="Interface\\Buttons\\WHITE8x8", edgeSize=2 })
-ns.btnSearch:SetBackdropColor(0, 0, 0, 1)
-ns.btnSearch:SetBackdropBorderColor(0.45, 0.15, 0.70, 0.85)
-ns.btnSearch:SetScript("OnEnter", function(self)
-    self:SetBackdropColor(0.10, 0.10, 0.10, 1)
-    local b = ns._themeBorder or {0.65, 0.35, 1.0}
-    self:SetBackdropBorderColor(b[1], b[2], b[3], 1)
-end)
-ns.btnSearch:SetScript("OnLeave", function(self)
-    self:SetBackdropColor(0, 0, 0, 1)
-    local b = ns._themeBorder or {0.45, 0.15, 0.70}
-    self:SetBackdropBorderColor(b[1], b[2], b[3], 0.85)
-end)
+ns.btnSearch:SetSize(BTN_W, BTN_H)
+ns.btnSearch:SetPoint("TOP", sideBar, "TOP", 0, -12)
+ns.Skin.SideButton(ns.btnSearch)
 ns.btnSearch:SetScript("OnClick", function() CloseAllPopups(); ns.ShowSearch() end)
 ns.sideButtons[#ns.sideButtons + 1] = ns.btnSearch
 
-local btnChars   = CreateMenuButton("...", ns.btnSearch, -10)
-local btnBank    = CreateMenuButton("...", btnChars,     -10)
-local btnWarband = CreateMenuButton("...", btnBank,      -10)
-ns.btnGear       = CreateMenuButton("...", btnWarband,   -10)
+local btnChars   = CreateMenuButton("...", ns.btnSearch, -BTN_GAP)
+local btnBank    = CreateMenuButton("...", btnChars,     -BTN_GAP)
+local btnWarband = CreateMenuButton("...", btnBank,      -BTN_GAP)
+ns.btnGear       = CreateMenuButton("...", btnWarband,   -BTN_GAP)
 
 ns.btnChars   = btnChars
 ns.btnWarband = btnWarband
@@ -131,14 +96,19 @@ ns.btnLastBeforeConfig = ns.btnGear
 -- plugin, pour rester juste avant Paramètres quoi qu'il arrive.
 -- Appel du module fonctionnalite/Discord.lua de façon contrôlée
 -- (aucune dépendance directe : simple vérification d'existence).
-ns.btnDiscord = CreateMenuButton("...", ns.btnLastBeforeConfig, -10)
+ns.btnDiscord = CreateMenuButton("...", ns.btnLastBeforeConfig, -BTN_GAP)
 ns.btnDiscord:SetScript("OnClick", function()
     CloseAllPopups()
     if ns.ShowDiscordDialog then ns.ShowDiscordDialog() end
 end)
 
-ns.btnConfig = CreateMenuButton("...", ns.btnDiscord, -10)
+ns.btnConfig = CreateMenuButton("...", ns.btnDiscord, -BTN_GAP)
 ns.btnConfig:SetScript("OnClick", function() CloseAllPopups(); ns.ShowSettings() end)
+
+-- Bouton actif : toutes les vues natives (Discord ouvre juste un dialogue)
+for _, b in ipairs({ ns.btnSearch, btnChars, btnBank, btnWarband, ns.btnGear, ns.btnConfig }) do
+    b:HookScript("OnClick", function(self) ns.Skin.SetActive(self) end)
+end
 
 -- ====================================================
 -- ENREGISTREMENT DE BOUTONS SIDEBAR PAR LES PLUGINS
@@ -178,16 +148,16 @@ local function RelayoutPluginButtons()
     local anchor = ns.btnGear
     for _, entry in ipairs(_pluginButtons) do
         entry.btn:ClearAllPoints()
-        entry.btn:SetPoint("TOP", anchor, "BOTTOM", 0, -10)
+        entry.btn:SetPoint("TOP", anchor, "BOTTOM", 0, -BTN_GAP)
         anchor = entry.btn
     end
     ns.btnLastBeforeConfig = anchor
 
     ns.btnDiscord:ClearAllPoints()
-    ns.btnDiscord:SetPoint("TOP", anchor, "BOTTOM", 0, -10)
+    ns.btnDiscord:SetPoint("TOP", anchor, "BOTTOM", 0, -BTN_GAP)
 
     ns.btnConfig:ClearAllPoints()
-    ns.btnConfig:SetPoint("TOP", ns.btnDiscord, "BOTTOM", 0, -10)
+    ns.btnConfig:SetPoint("TOP", ns.btnDiscord, "BOTTOM", 0, -BTN_GAP)
 end
 
 -- Crée (via factory) et positionne un bouton de plugin dans la
@@ -201,11 +171,24 @@ function ns.RegisterSidebarButton(priority, factory)
     local btn = factory(sideBar)
     if not btn then return nil end
 
-    ns.sideButtons[#ns.sideButtons + 1] = btn
-    if ns._themeBorder then
-        local b = ns._themeBorder
-        btn:SetBackdropBorderColor(b[1], b[2], b[3], 0.85)
+    -- Le look des boutons de sidebar appartient au core : taille, skin
+    -- et bouton actif sont appliqués ici, les plugins n'ont rien à gérer.
+    btn:SetSize(BTN_W, BTN_H)
+    ns.Skin.SideButton(btn)
+    -- Bouton actif : le plugin pose son OnClick après l'enregistrement, ce
+    -- qui écraserait un HookScript. On enveloppe donc SetScript lui-même.
+    local rawSetScript = btn.SetScript
+    btn.SetScript = function(self, name, fn)
+        if name == "OnClick" and fn then
+            local user = fn
+            fn = function(s, ...) ns.Skin.SetActive(s); return user(s, ...) end
+        end
+        return rawSetScript(self, name, fn)
     end
+    local existing = btn:GetScript("OnClick")
+    if existing then btn:SetScript("OnClick", existing) end
+
+    ns.sideButtons[#ns.sideButtons + 1] = btn
 
     _pluginButtons[#_pluginButtons + 1] = { priority = priority, btn = btn }
     RelayoutPluginButtons()
@@ -214,15 +197,30 @@ end
 
 -- ── Mise à jour textes (couleur de classe, localisation) ──────────
 local function RefreshMenuText()
-    ns.btnSearch:SetText(CC(ns.L("BTN_SEARCH")))
-    btnChars:SetText(CC(ns.L("BTN_CHARS")))
-    btnBank:SetText(CC(ns.L("BTN_BANK")))
-    btnWarband:SetText(CC(ns.L("BTN_WARBAND")))
-    ns.btnGear:SetText(CC(ns.L("BTN_GEAR")))
-    ns.btnConfig:SetText(CC(ns.L("BTN_SETTINGS")))
-    ns.btnDiscord:SetText(CC(ns.L("BTN_DISCORD")))
+    ns.btnSearch:SetText(ns.L("BTN_SEARCH"))
+    btnChars:SetText(ns.L("BTN_CHARS"))
+    btnBank:SetText(ns.L("BTN_BANK"))
+    btnWarband:SetText(ns.L("BTN_WARBAND"))
+    ns.btnGear:SetText(ns.L("BTN_GEAR"))
+    ns.btnConfig:SetText(ns.L("BTN_SETTINGS"))
+    ns.btnDiscord:SetText(ns.L("BTN_DISCORD"))
 end
 ns.RefreshMenuText = RefreshMenuText
+
+-- À l'ouverture : surligne le bouton de la vue native courante
+-- (une vue de plugin garde son surlignage posé au clic).
+ns.mainFrame:HookScript("OnShow", function()
+    local v = ns.currentView
+    local map = {
+        [ns.RefreshCharacterList or 0] = btnChars,
+        [ns.ShowSearch or 0]           = ns.btnSearch,
+        [ns.ShowGear or 0]             = ns.btnGear,
+        [ns.ShowWarbandBank or 0]      = btnWarband,
+        [ns.ShowSettings or 0]         = ns.btnConfig,
+    }
+    if not v then ns.Skin.SetActive(btnChars)
+    elseif map[v] then ns.Skin.SetActive(map[v]) end
+end)
 
 -- Applique les textes au login (couleurs de classe disponibles)
 local _loginFrame = CreateFrame("Frame")
@@ -231,6 +229,5 @@ _loginFrame:SetScript("OnEvent", function(self)
     self:UnregisterEvent("PLAYER_LOGIN")
     if ns.AVL_InitFilterCats then ns.AVL_InitFilterCats() end
     RefreshMenuText()
-    local theme = AltViewerLogDB and AltViewerLogDB.settings and AltViewerLogDB.settings.theme
-    if theme and ns.ApplyTheme then ns.ApplyTheme(theme) end
+    ns.ApplyTheme(ns.GetThemeKey())
 end)

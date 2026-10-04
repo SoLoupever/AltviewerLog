@@ -8,6 +8,7 @@ pluginNs.locales = {}
 pluginNs.locales["frFR"] = {
     BTN_GUILDE          = "Coffre de Guilde",
     GUILDE_TITLE        = "Coffre de Guilde",
+    GUILDS_HEADING      = "Guildes",
     NO_DATA             = "Aucun coffre scanné.\nOuvrez le coffre de guilde pour scanner.",
     NO_GUILD            = "Vous n'êtes dans aucune guilde.",
     TAB_LABEL           = "Onglet %d",

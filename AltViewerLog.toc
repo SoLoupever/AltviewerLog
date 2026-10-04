@@ -26,6 +26,9 @@ core\Events.lua
 core\Minimap.lua
 core\SlashCmd.lua
 
+## ── THÈME ─────────────────────────────────────────────────────────
+ui\Theme.lua
+
 ## ── VUES ──────────────────────────────────────────────────────────
 views\Shared.lua
 views\CategoryStore.lua
@@ -47,6 +50,5 @@ fonctionnalite\CategoryDnD.lua
 ui\MainFrame.lua
 ui\Sidebar.lua
 ui\ScrollArea.lua
-ui\Theme.lua
 ui\Settings.lua
 ui\BottomBar.lua

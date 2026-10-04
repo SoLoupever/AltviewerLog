@@ -28,12 +28,6 @@ local LINK = "https://discord.gg/2gfEKGAT46"
 
 local dlg
 
--- Couleur du thème courant (cf. ui/Theme.lua), avec le même repli que
--- le reste de la sidebar quand aucun thème n'a encore été appliqué.
-local function ThemeColor()
-    return ns._themeBorder or { 0.45, 0.15, 0.70 }
-end
-
 -- Construction paresseuse : la fenêtre n'est créée qu'au premier
 -- appel, une seule fois (pas de recréation à chaque clic).
 local function EnsureDialog()
@@ -44,13 +38,7 @@ local function EnsureDialog()
     dlg:SetPoint("CENTER")
     dlg:SetFrameStrata("DIALOG")
     dlg:SetToplevel(true)
-    dlg:SetBackdrop({
-        bgFile   = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-        edgeSize = 16,
-        insets   = { left = 4, right = 4, top = 4, bottom = 4 },
-    })
-    dlg:SetBackdropColor(0.05, 0.05, 0.07, 0.98)
+    ns.Skin.Frame(dlg, "window")
     dlg:EnableMouse(true)
     dlg:SetMovable(true)
     dlg:RegisterForDrag("LeftButton")
@@ -61,8 +49,9 @@ local function EnsureDialog()
     dlg.title = dlg:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     dlg.title:SetPoint("TOP", 0, -14)
 
-    local close = CreateFrame("Button", nil, dlg, "UIPanelCloseButton")
-    close:SetPoint("TOPRIGHT", 0, 0)
+    local close = ns.Skin.CloseButton(dlg, function() dlg:Hide() end)
+    close:SetSize(22, 22)
+    close:SetPoint("TOPRIGHT", -8, -8)
 
     dlg.hintFS = dlg:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     dlg.hintFS:SetPoint("TOP", 0, -38)
@@ -71,12 +60,7 @@ local function EnsureDialog()
     box:SetPoint("TOPLEFT", 16, -58)
     box:SetPoint("TOPRIGHT", -16, -58)
     box:SetHeight(22)
-    box:SetBackdrop({
-        bgFile   = "Interface\\Buttons\\WHITE8x8",
-        edgeFile = "Interface\\Buttons\\WHITE8x8",
-        edgeSize = 1,
-    })
-    box:SetBackdropColor(0, 0, 0, 0.6)
+    ns.Skin.Frame(box, "input")
     dlg.box = box
 
     local edit = CreateFrame("EditBox", nil, box)
@@ -105,9 +89,7 @@ end
 function ns.ShowDiscordDialog()
     EnsureDialog()
 
-    local c = ThemeColor()
-    dlg:SetBackdropBorderColor(c[1], c[2], c[3], 1)
-    dlg.box:SetBackdropBorderColor(c[1], c[2], c[3], 0.6)
+    dlg.title:SetTextColor(unpack(ns.Theme.heading))
 
     -- Textes relus à chaque ouverture pour suivre un éventuel
     -- changement de langue en cours de session (AltViewerLogDB.settings.lang).

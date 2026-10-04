@@ -29,26 +29,6 @@ if core.RegisterSidebarButton then
 
     local btnGuilde = core.RegisterSidebarButton(300, function(parent)
         local btn = CreateFrame("Button", nil, parent, "BackdropTemplate")
-        btn:SetSize(160, 35)
-        btn:SetNormalFontObject("GameFontNormal")
-        btn:SetBackdrop({
-            bgFile="Interface\\Buttons\\WHITE8x8", edgeFile="Interface\\Buttons\\WHITE8x8", edgeSize=2
-        })
-        btn:SetBackdropColor(0, 0, 0, 1)
-        do
-            local b = pluginNs.GetThemeBorder()
-            btn:SetBackdropBorderColor(b[1], b[2], b[3], 0.85)
-        end
-        btn:SetScript("OnEnter", function(self)
-            self:SetBackdropColor(0.10, 0.10, 0.10, 1)
-            local b = pluginNs.GetThemeBorder()
-            self:SetBackdropBorderColor(b[1], b[2], b[3], 1)
-        end)
-        btn:SetScript("OnLeave", function(self)
-            self:SetBackdropColor(0, 0, 0, 1)
-            local b = pluginNs.GetThemeBorder()
-            self:SetBackdropBorderColor(b[1], b[2], b[3], 0.85)
-        end)
         return btn
     end)
 
@@ -104,7 +84,7 @@ if core.RegisterSidebarButton then
         core.GetContentWidth = function()
             if pluginNs.isViewActive and pluginNs._selectorScroll
             and pluginNs._selectorScroll:IsShown() then
-                return math.max(300, core.mainFrame:GetWidth() - 200 - 10 - 30 - SELECTOR_W)
+                return math.max(300, _origGetContentWidth() - 10 - SELECTOR_W)
             end
             return _origGetContentWidth()
         end

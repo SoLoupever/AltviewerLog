@@ -9,6 +9,12 @@ pluginNs.locales["frFR"] = {
     BTN_GRAPH   = "Graphique",
     STATS_TITLE = "Statistiques : Temps de jeu par Classe (Tous Serveurs)",
     NO_DATA     = "Aucune donnée disponible",
+    STATS_HEADING = "Statistiques",
+    STATS_SUB = "Temps de jeu par classe",
+    ALL_REALMS = "Tous serveurs",
+    STAT_TOTAL_TIME = "Temps total",
+    STAT_TOP_CLASS = "Classe la plus jouée",
+    STAT_CHARS = "Personnages",
 
     -- Erreurs / debug
     ERR_API_MISSING = "ERREUR : AltViewerLogAPI introuvable.",

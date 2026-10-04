@@ -60,9 +60,7 @@ local function HideUnusedPools()
         if s.charSep then s.charSep:Hide() end
     end
     for i = profRowUsed + 1, #profRowPool do
-        local s = profRowPool[i]
-        s.ic:Hide(); s.pName:Hide()
-        if s.profSep then s.profSep:Hide() end
+        profRowPool[i].card:Hide()
     end
     for i = tierBarUsed + 1, #tierBarPool do
         local s = tierBarPool[i]
@@ -552,71 +550,61 @@ function pluginNs.ShowProfessions()
 
     local contentW = GetContentWidth()
 
-    -- ── Titre + bouton scan ──────────────────────────────────────────────
-    local title = core.scrollChild._profTitle
+    -- ── En-tête : titre, scan, filtres, recherche ───────────────────────
+    local sc = core.scrollChild
+    local T  = core.Theme
+    local PADX = 16
+
+    local title = sc._profTitle
     if not title then
-        title = core.scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-        core.scrollChild._profTitle = title
-        title:SetTextColor(1, 0.82, 0)
+        title = sc:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+        sc._profTitle = title
     end
     title:ClearAllPoints()
-    title:SetPoint("TOPLEFT", 20, -20)
+    title:SetPoint("TOPLEFT", PADX, -14)
     title:SetText(core.L("BTN_PROFESSIONS"))
+    title:SetTextColor(unpack(T.heading))
     title:Show()
 
-    local scanBtn = core.scrollChild._profScanBtn
-    if not scanBtn then
-        scanBtn = CreateFrame("Button", nil, core.scrollChild, "BackdropTemplate")
-        core.scrollChild._profScanBtn = scanBtn
-        scanBtn:SetSize(150, 22)
-        scanBtn:SetText(core.L("SCAN_BTN"))
-        scanBtn:SetNormalFontObject("GameFontNormalSmall")
-        scanBtn:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8",
-                              edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1 })
-        scanBtn:SetBackdropColor(0.20, 0.20, 0.20, 0.85)
-        scanBtn:SetBackdropBorderColor(0.40, 0.40, 0.40, 1)
-        scanBtn:SetScript("OnEnter", function(self) self:SetBackdropColor(0.30, 0.30, 0.30, 0.95) end)
-        scanBtn:SetScript("OnLeave", function(self) self:SetBackdropColor(0.20, 0.20, 0.20, 0.85) end)
+    local function HeaderButton(key, w)
+        local b = sc[key]
+        if not b then
+            b = CreateFrame("Button", nil, sc, "BackdropTemplate")
+            sc[key] = b
+            b:SetSize(w, 28)
+            core.Skin.Button(b)
+        end
+        return b
+    end
+
+    local scanBtn = HeaderButton("_profScanBtn", 160)
+    if not scanBtn.fs then
+        scanBtn.fs = scanBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        scanBtn.fs:SetPoint("CENTER")
         scanBtn:SetScript("OnClick", pluginNs.ScanAllProfessions)
     end
+    scanBtn.fs:SetText(core.L("SCAN_BTN"))
+    scanBtn.fs:SetTextColor(unpack(T.gold))
     scanBtn:ClearAllPoints()
-    scanBtn:SetPoint("LEFT", title, "RIGHT", 15, 0)
+    scanBtn:SetPoint("LEFT", title, "RIGHT", 16, 0)
     scanBtn:Show()
 
-    -- ── Bouton engrenage : filtre extensions ────────────────────────────
-    local filterBtn = core.scrollChild._profFilterBtn
-    if not filterBtn then
-        filterBtn = CreateFrame("Button", nil, core.scrollChild, "BackdropTemplate")
-        core.scrollChild._profFilterBtn = filterBtn
-        filterBtn:SetSize(22, 22)
-        filterBtn:SetBackdrop({ bgFile   = "Interface\\Buttons\\WHITE8x8",
-                                 edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1 })
-        filterBtn:SetBackdropColor(0.18, 0.15, 0.08, 1)
-        filterBtn:SetBackdropBorderColor(0.50, 0.42, 0.18, 1)
-
+    -- Filtre extensions (engrenage)
+    local filterBtn = HeaderButton("_profFilterBtn", 28)
+    if not filterBtn.gearTex then
         local gearTex = filterBtn:CreateTexture(nil, "ARTWORK")
         filterBtn.gearTex = gearTex
         gearTex:SetTexture("Interface\\Buttons\\UI-OptionsButton")
         gearTex:SetSize(16, 16)
         gearTex:SetPoint("CENTER", 0, 0)
         gearTex:SetVertexColor(0.95, 0.82, 0.40)
-
-        filterBtn:SetScript("OnEnter", function(self)
-            self:SetBackdropColor(0.30, 0.24, 0.10, 1)
-            self:SetBackdropBorderColor(0.85, 0.70, 0.25, 1)
-            gearTex:SetVertexColor(1, 1, 0.7)
+        filterBtn:HookScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetText(core.L("EXPANSION_FILTER_TOOLTIP"), 1, 0.85, 0.20)
             GameTooltip:Show()
         end)
-        filterBtn:SetScript("OnLeave", function(self)
-            self:SetBackdropColor(0.18, 0.15, 0.08, 1)
-            self:SetBackdropBorderColor(0.50, 0.42, 0.18, 1)
-            gearTex:SetVertexColor(0.95, 0.82, 0.40)
-            GameTooltip:Hide()
-        end)
+        filterBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
         filterBtn:SetScript("OnClick", function(self)
-            -- Fermer l'autre popup avant d'ouvrir celui-ci
             if professionFilterPopup and professionFilterPopup:IsShown() then
                 professionFilterPopup:Hide()
             end
@@ -624,41 +612,24 @@ function pluginNs.ShowProfessions()
         end)
     end
     filterBtn:ClearAllPoints()
-    filterBtn:SetPoint("LEFT", scanBtn, "RIGHT", 6, 0)
+    filterBtn:SetPoint("LEFT", scanBtn, "RIGHT", 8, 0)
     filterBtn:Show()
 
-    -- ── Bouton marteau : filtre métiers (même mécanisme que engrenage) ───
-    local profFilterBtn = core.scrollChild._profFilterBtn2
-    if not profFilterBtn then
-        profFilterBtn = CreateFrame("Button", nil, core.scrollChild, "BackdropTemplate")
-        core.scrollChild._profFilterBtn2 = profFilterBtn
-        profFilterBtn:SetSize(22, 22)
-        profFilterBtn:SetBackdrop({ bgFile   = "Interface\\Buttons\\WHITE8x8",
-                                     edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1 })
-        profFilterBtn:SetBackdropColor(0.08, 0.12, 0.20, 1)
-        profFilterBtn:SetBackdropBorderColor(0.20, 0.38, 0.60, 1)
-
+    -- Filtre métiers (marteau)
+    local profFilterBtn = HeaderButton("_profFilterBtn2", 28)
+    if not profFilterBtn.hammerTex then
         local hammerTex = profFilterBtn:CreateTexture(nil, "ARTWORK")
+        profFilterBtn.hammerTex = hammerTex
         hammerTex:SetTexture("Interface\\Icons\\Trade_BlackSmithing")
-        hammerTex:SetSize(16, 16)
+        hammerTex:SetSize(18, 18)
         hammerTex:SetPoint("CENTER", 0, 0)
-
-        profFilterBtn:SetScript("OnEnter", function(self)
-            self:SetBackdropColor(0.12, 0.20, 0.35, 1)
-            self:SetBackdropBorderColor(0.40, 0.65, 1.0, 1)
-            hammerTex:SetVertexColor(0.7, 0.9, 1.0)
+        profFilterBtn:HookScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:SetText(core.L("PROF_FILTER_TT"), 0.55, 0.80, 1.0)
+            GameTooltip:SetText(core.L("PROF_FILTER_TT"), 1, 0.85, 0.20)
             GameTooltip:Show()
         end)
-        profFilterBtn:SetScript("OnLeave", function(self)
-            self:SetBackdropColor(0.08, 0.12, 0.20, 1)
-            self:SetBackdropBorderColor(0.20, 0.38, 0.60, 1)
-            hammerTex:SetVertexColor(1, 1, 1)
-            GameTooltip:Hide()
-        end)
+        profFilterBtn:HookScript("OnLeave", function() GameTooltip:Hide() end)
         profFilterBtn:SetScript("OnClick", function(self)
-            -- Fermer l'autre popup avant d'ouvrir celui-ci
             if expansionFilterPopup and expansionFilterPopup:IsShown() then
                 expansionFilterPopup:Hide()
             end
@@ -666,40 +637,34 @@ function pluginNs.ShowProfessions()
         end)
     end
     profFilterBtn:ClearAllPoints()
-    profFilterBtn:SetPoint("LEFT", filterBtn, "RIGHT", 4, 0)
+    profFilterBtn:SetPoint("LEFT", filterBtn, "RIGHT", 6, 0)
     profFilterBtn:Show()
 
-    -- ── Barre de recherche de recette ───────────────────────────────
-    -- Enfant de core.scrollChild (à côté des boutons de filtre, comme
-    -- demandé). ShowProfessions() se rappelle à chaque frappe et vide le
-    -- scrollChild : on restaure le focus juste après pour permettre une
-    -- saisie continue. La recherche (>= 2 caractères) déplie et filtre
-    -- automatiquement les grilles de recettes correspondantes.
-    local searchBox = core.scrollChild._profSearchBox
+    -- Recherche de recette (>= 2 caractères : déplie et filtre les grilles).
+    -- ShowProfessions() se rappelle à chaque frappe : le focus est restauré.
+    local searchBox = sc._profSearchBox
     if not searchBox then
-        searchBox = CreateFrame("EditBox", nil, core.scrollChild, "BackdropTemplate")
-        core.scrollChild._profSearchBox = searchBox
+        searchBox = CreateFrame("EditBox", nil, sc, "BackdropTemplate")
+        sc._profSearchBox = searchBox
         searchBox:SetAutoFocus(false)
-        searchBox:SetSize(190, 22)
+        searchBox:SetSize(230, 28)
         searchBox:SetFontObject("GameFontHighlightSmall")
-        searchBox:SetTextInsets(22, 18, 0, 0)
-        searchBox:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8",
-                                edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1 })
-        searchBox:SetBackdropColor(0.08, 0.10, 0.14, 0.95)
-        searchBox:SetBackdropBorderColor(0.30, 0.45, 0.60, 1)
+        searchBox:SetTextInsets(28, 22, 0, 0)
+        core.Skin.Frame(searchBox, "input")
+        searchBox:HookScript("OnEditFocusGained", function(s) s._hover = true;  core.Skin.Paint(s) end)
+        searchBox:HookScript("OnEditFocusLost",   function(s) s._hover = false; core.Skin.Paint(s) end)
 
         local ico = searchBox:CreateTexture(nil, "OVERLAY")
-        ico:SetSize(14, 14); ico:SetPoint("LEFT", 5, 0)
+        ico:SetSize(14, 14); ico:SetPoint("LEFT", 8, 0)
         ico:SetTexture("Interface\\Common\\UI-Searchbox-Icon")
 
         local ph = searchBox:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-        ph:SetPoint("LEFT", 22, 0)
+        ph:SetPoint("LEFT", 28, 0)
         ph:SetText(pluginNs.L("RECIPE_SEARCH_PLACEHOLDER"))
         searchBox._placeholder = ph
 
         local clr = CreateFrame("Button", nil, searchBox)
-        clr:SetSize(14, 14); clr:SetPoint("RIGHT", -4, 0)
-        -- Texture (pas un glyphe : la police WoW n'a pas le caractère ✕).
+        clr:SetSize(14, 14); clr:SetPoint("RIGHT", -5, 0)
         local clrTex = clr:CreateTexture(nil, "OVERLAY")
         clrTex:SetAllPoints()
         clrTex:SetTexture("Interface\\RAIDFRAME\\ReadyCheck-NotReady")
@@ -719,7 +684,7 @@ function pluginNs.ShowProfessions()
         end)
     end
     searchBox:ClearAllPoints()
-    searchBox:SetPoint("LEFT", profFilterBtn, "RIGHT", 10, 0)
+    searchBox:SetPoint("TOPRIGHT", sc, "TOPRIGHT", -PADX, -14)
     searchBox:Show()
     if pluginNs._recipeSearchWantFocus then
         pluginNs._recipeSearchWantFocus = false
@@ -740,18 +705,18 @@ function pluginNs.ShowProfessions()
             woodDetail = d or {}
         end
         local WoodName = (vlWoodAPI and vlWoodAPI.GetWoodItemName) or function() return "?" end
-        local BTN_GAP    = 4
-        local BTN_H      = 44
-        local AREA_LEFT  = 10
-        local AREA_RIGHT = contentW - 10
+        local BTN_GAP    = 8
+        local BTN_H      = 50
+        local AREA_LEFT  = 16
+        local AREA_RIGHT = contentW - 16
         local usableW    = AREA_RIGHT - AREA_LEFT
         local N_PER_ROW  = 1
-        for n = 7, 2, -1 do
+        for n = 6, 2, -1 do
             local w = math.floor((usableW - (n - 1) * BTN_GAP) / n)
             if w >= 65 then N_PER_ROW = n; break end
         end
         local BTN_W   = math.floor((usableW - (N_PER_ROW - 1) * BTN_GAP) / N_PER_ROW)
-        local START_Y = -52
+        local START_Y = -56
 
         local woodSectionTitle = core.scrollChild._profWoodTitle
         if not woodSectionTitle then
@@ -760,10 +725,11 @@ function pluginNs.ShowProfessions()
         end
         woodSectionTitle:ClearAllPoints()
         woodSectionTitle:SetPoint("TOPLEFT", AREA_LEFT, START_Y)
-        woodSectionTitle:SetText("|cffcca060" .. core.L("WOOD_BANK_TITLE") .. "|r")
+        woodSectionTitle:SetText(core.L("WOOD_BANK_TITLE"))
+        woodSectionTitle:SetTextColor(unpack(core.Theme.textDim))
         woodSectionTitle:SetShown(#woodExpansions > 0)
 
-        local curX = AREA_LEFT; local curY = START_Y - 18; local colIdx = 0
+        local curX = AREA_LEFT; local curY = START_Y - 22; local colIdx = 0
 
         for _, expBlock in ipairs(woodExpansions) do
             if colIdx > 0 and colIdx % N_PER_ROW == 0 then
@@ -833,23 +799,21 @@ function pluginNs.ShowProfessions()
             btn:Show()
             curX = curX + BTN_W + BTN_GAP; colIdx = colIdx + 1
         end
-        woodSectionBottomY = (#woodExpansions > 0) and (curY - BTN_H - 10) or START_Y
+        woodSectionBottomY = (#woodExpansions > 0) and (curY - BTN_H - 14) or (START_Y + 6)
     end
 
-    local sep = core.scrollChild._profSep
+    local sep = sc._profSep
     if not sep then
-        sep = core.scrollChild:CreateTexture(nil, "ARTWORK")
-        core.scrollChild._profSep = sep
-        sep:SetColorTexture(1, 0.82, 0, 0.3)
+        sep = sc:CreateTexture(nil, "ARTWORK")
+        sc._profSep = sep
     end
     sep:ClearAllPoints()
-    sep:SetSize(contentW - 20, 1); sep:SetPoint("TOPLEFT", 10, woodSectionBottomY)
+    sep:SetColorTexture(T.heading[1], T.heading[2], T.heading[3], 0.30)
+    sep:SetSize(contentW - PADX * 2, 1); sep:SetPoint("TOPLEFT", PADX, woodSectionBottomY)
     sep:Show()
 
     -- ── Collecte et tri des personnages ──────────────
-    -- Les données de personnage (class, professions…) sont dans ViewerLogDB.
-    -- AltViewerLogDB ne contient que les préférences UI (hiddenExpansions…).
-    -- On filtre les clés réservées de ViewerLog via vlAPI.IsRealm().
+    -- Données dans ViewerLogDB ; clés réservées filtrées via vlAPI.IsRealm().
     local charList = {}
     for realmName, realmData in pairs(vlDB) do
         if vlAPI and vlAPI.IsRealm(realmName, realmData) then
@@ -869,292 +833,256 @@ function pluginNs.ShowProfessions()
     end)
 
     if #charList == 0 then
-        local hint = core.scrollChild:CreateFontString(nil, "OVERLAY", "GameFontDisable")
+        local hint = sc:CreateFontString(nil, "OVERLAY", "GameFontDisable")
         hint:SetPoint("TOP", 0, -120); hint:SetText(core.L("NO_CHARS")); hint:SetJustifyH("CENTER")
-        core.scrollChild:SetHeight(200)
+        sc:SetHeight(200)
         HideUnusedPools()
         return
     end
 
-    local offsetY  = woodSectionBottomY - 16
-    local BAR_WIDTH = 280
-    local LEFT_PAD  = 20
+    -- ── Grille de cartes métier (2 colonnes, 1 si l'espace manque) ──
+    local GAP        = 14
+    local CARD_PAD   = 12
+    local BAR_H      = 22
+    local ncols      = 2
+    local cardW      = math.floor((contentW - PADX * 2 - GAP) / 2)
+    if cardW < 300 then ncols = 1; cardW = contentW - PADX * 2 end
+    local innerW     = cardW - CARD_PAD * 2
+    local halfW      = math.floor((innerW - 10) / 2)
+
+    local offsetY = woodSectionBottomY - 16
+
+    local function ColorTierBar(tSlot, isFull, pct)
+        tSlot.bg._avlRole = "input"
+        core.Skin.Paint(tSlot.bg)
+        if pct > 0 then
+            tSlot.fill:SetWidth(math.max((innerW - 2) * pct, 2))
+            if isFull then tSlot.fill:SetColorTexture(0.10, 0.58, 0.28, 1)
+            else tSlot.fill:SetColorTexture(0.18, 0.42, 0.80, 1) end
+            tSlot.fill:Show()
+        else
+            tSlot.fill:Hide()
+        end
+    end
 
     for _, entry in ipairs(charList) do
         local charName  = entry.name
         local realmName = entry.realm
         local charData  = entry.data
-        local isCurrent = (charName == core.player and realmName == core.realm)
         local c = RAID_CLASS_COLORS[charData.class] or { r=1, g=1, b=1 }
 
-        local hasVisibleProf = false
+        -- Métiers visibles : principaux puis secondaires
+        local visibleProfs = {}
         for _, p in ipairs(charData.professions) do
-            if not IsProfessionHidden(p.name) then
-                hasVisibleProf = true; break
-            end
+            if not p.secondary and not IsProfessionHidden(p.name) then visibleProfs[#visibleProfs + 1] = p end
         end
-        if hasVisibleProf then
+        for _, p in ipairs(charData.professions) do
+            if p.secondary and not IsProfessionHidden(p.name) then visibleProfs[#visibleProfs + 1] = p end
+        end
 
+        if #visibleProfs > 0 then
+
+        -- Bandeau personnage
         charRowUsed = charRowUsed + 1
         local rowSlot = charRowPool[charRowUsed]
         if not rowSlot then
             rowSlot = {}
-            rowSlot.charBlock = CreateFrame("Frame", nil, core.scrollChild, "BackdropTemplate")
+            rowSlot.charBlock = CreateFrame("Frame", nil, sc, "BackdropTemplate")
             rowSlot.charBlock:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8" })
-
-            rowSlot.stoneBtn = CreateFrame("Button", nil, rowSlot.charBlock)
-            rowSlot.stoneBtn:SetSize(16, 16); rowSlot.stoneBtn:SetPoint("LEFT", 4, 0)
-
-            rowSlot.charLabel = rowSlot.charBlock:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-            rowSlot.charLabel:SetPoint("LEFT", 24, 0)
-
+            rowSlot.charLabel = rowSlot.charBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+            rowSlot.charLabel:SetPoint("LEFT", 14, 0)
             rowSlot.lvlFS = rowSlot.charBlock:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            rowSlot.lvlFS:SetPoint("RIGHT", -10, 0); rowSlot.lvlFS:SetTextColor(0.6, 0.6, 0.6)
-
+            rowSlot.lvlFS:SetPoint("RIGHT", -14, 0)
             charRowPool[charRowUsed] = rowSlot
         end
-        local charBlock, stoneBtn, charLabel = rowSlot.charBlock, rowSlot.stoneBtn, rowSlot.charLabel
-
+        local charBlock, charLabel = rowSlot.charBlock, rowSlot.charLabel
         charBlock:ClearAllPoints()
-        charBlock:SetSize(LEFT_PAD + BAR_WIDTH, 24)
-        charBlock:SetPoint("TOPLEFT", LEFT_PAD, offsetY)
-        charBlock:SetBackdropColor(c.r*0.22 + 0.06, c.g*0.22 + 0.06, c.b*0.22 + 0.06, 0.92)
+        charBlock:SetSize(contentW - PADX * 2, 32)
+        charBlock:SetPoint("TOPLEFT", PADX, offsetY)
+        charBlock:SetBackdropColor(c.r*0.22 + 0.05, c.g*0.22 + 0.05, c.b*0.22 + 0.05, 1)
         charBlock:Show()
 
-        if isCurrent then stoneBtn:SetNormalAtlas("DungeonStoneCheckpoint"); stoneBtn:SetAlpha(1)
-        else stoneBtn:SetNormalAtlas("DungeonStoneCheckpointDeactivated"); stoneBtn:SetAlpha(0.3) end
-
-        local classHex = string.format("%02x%02x%02x",
-            math.floor(c.r*255), math.floor(c.g*255), math.floor(c.b*255))
         charLabel:SetTextColor(c.r, c.g, c.b)
-        charLabel:SetText(string.format("%s  |cff%s%s|r", charName, classHex, realmName))
-
+        charLabel:SetText(string.format("%s |cff%s%s|r", charName, core.ColorHex(T.textDim), realmName))
         if charData.level then
             rowSlot.lvlFS:SetText(core.L("LEVEL_SHORT") .. charData.level)
+            rowSlot.lvlFS:SetTextColor(unpack(T.textDim))
             rowSlot.lvlFS:Show()
         else
             rowSlot.lvlFS:Hide()
         end
-        offsetY = offsetY - 28
+        offsetY = offsetY - 32 - 12
 
-        do
-            local mainProfs, secProfs = {}, {}
-            for _, p in ipairs(charData.professions) do
-                if p.secondary then table.insert(secProfs, p) else table.insert(mainProfs, p) end
+        -- Données housing (module ViewerLog_Housing, lecture seule). nil si absent.
+        local housingData = (vlAPI and vlAPI.GetHousingRecipes)
+            and vlAPI.GetHousingRecipes(charName, realmName) or nil
+
+        local rowTop, rowH, deferred = offsetY, 0, {}
+
+        for idx, profData in ipairs(visibleProfs) do
+            local col = (idx - 1) % ncols
+            if col == 0 then rowTop, rowH, deferred = offsetY, 0, {} end
+            local cardX = PADX + col * (cardW + GAP)
+
+            -- Paliers visibles (filtre extensions)
+            local tiers = {}
+            for _, tier in ipairs(profData.tiers or {}) do
+                if not IsExpansionHidden(tier.name) then tiers[#tiers + 1] = tier end
             end
+            local cardH = 58 + #tiers * (BAR_H + 3) + (#tiers > 0 and 8 or 0) + 24 + CARD_PAD
 
-            -- Données housing fournies par le module ViewerLog_Housing
-            -- (lecture seule via _G.ViewerLogAPI). nil si le module est
-            -- absent/désactivé -> la barre housing ne s'affiche pas.
-            local housingData = (vlAPI and vlAPI.GetHousingRecipes)
-                and vlAPI.GetHousingRecipes(charName, realmName) or nil
+            profRowUsed = profRowUsed + 1
+            local pSlot = profRowPool[profRowUsed]
+            if not pSlot then
+                pSlot = {}
+                pSlot.card = CreateFrame("Frame", nil, sc, "BackdropTemplate")
+                core.Skin.Frame(pSlot.card, "card")
+                pSlot.ic = pSlot.card:CreateTexture(nil, "ARTWORK")
+                pSlot.ic:SetSize(34, 34)
+                pSlot.ic:SetPoint("TOPLEFT", CARD_PAD, -CARD_PAD)
+                pSlot.ic:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+                pSlot.pName = pSlot.card:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+                pSlot.pName:SetPoint("LEFT", pSlot.ic, "RIGHT", 10, 0)
+                profRowPool[profRowUsed] = pSlot
+            end
+            local card = pSlot.card
+            card:ClearAllPoints()
+            card:SetSize(cardW, cardH)
+            card:SetPoint("TOPLEFT", sc, "TOPLEFT", cardX, rowTop)
+            card:SetFrameLevel(sc:GetFrameLevel() + 1)
+            core.Skin.Paint(card)
+            card:Show()
+            local lvl = card:GetFrameLevel() + 1
 
-            local function renderProfList(list)
-                local visible = {}
-                for _, p in ipairs(list) do
-                    if not IsProfessionHidden(p.name) then
-                        table.insert(visible, p)
-                    end
+            pSlot.ic:SetTexture(profData.icon)
+            pSlot.pName:SetText(GetProfDisplayName(profData.name))
+            pSlot.pName:SetTextColor(unpack(T.text))
+
+            -- Barres de paliers
+            local y = -58
+            for _, tier in ipairs(tiers) do
+                local safeMax = (tier.max and tier.max > 0) and tier.max or 1
+                local safeCur = tier.level or 0
+                local pct     = math.min(safeCur / safeMax, 1)
+                local isFull  = (safeCur >= safeMax)
+
+                tierBarUsed = tierBarUsed + 1
+                local tSlot = tierBarPool[tierBarUsed]
+                if not tSlot then
+                    tSlot = {}
+                    tSlot.bg = CreateFrame("Frame", nil, card, "BackdropTemplate")
+                    core.Skin.Frame(tSlot.bg, "input")
+                    tSlot.fill = tSlot.bg:CreateTexture(nil, "ARTWORK")
+                    tSlot.fill:SetPoint("TOPLEFT", 1, -1); tSlot.fill:SetPoint("BOTTOMLEFT", 1, 1)
+                    tSlot.nameFS = tSlot.bg:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                    tSlot.nameFS:SetPoint("LEFT", 8, 0); tSlot.nameFS:SetPoint("RIGHT", -56, 0)
+                    tSlot.nameFS:SetJustifyH("LEFT"); tSlot.nameFS:SetWordWrap(false)
+                    tSlot.rankFS = tSlot.bg:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                    tSlot.rankFS:SetPoint("RIGHT", -8, 0); tSlot.rankFS:SetJustifyH("RIGHT")
+                    tierBarPool[tierBarUsed] = tSlot
                 end
-                if #visible == 0 then return end
+                tSlot.bg:SetParent(card)
+                tSlot.bg:SetFrameLevel(lvl)
+                tSlot.bg:ClearAllPoints()
+                tSlot.bg:SetSize(innerW, BAR_H)
+                tSlot.bg:SetPoint("TOPLEFT", card, "TOPLEFT", CARD_PAD, y)
+                tSlot.fill:SetDrawLayer("ARTWORK")
+                ColorTierBar(tSlot, isFull, pct)
+                tSlot.bg:Show()
 
-                for profIdx, profData in ipairs(visible) do
-                    profRowUsed = profRowUsed + 1
-                    local pSlot = profRowPool[profRowUsed]
-                    if not pSlot then
-                        pSlot = {}
-                        pSlot.profSep = core.scrollChild:CreateTexture(nil, "ARTWORK")
-                        pSlot.profSep:SetColorTexture(0.3, 0.3, 0.3, 0.25)
+                tSlot.nameFS:SetTextColor(1, 1, 1, 1)
+                tSlot.nameFS:SetText(tier.name or "")
+                if isFull then tSlot.rankFS:SetTextColor(1, 1, 1, 1); tSlot.rankFS:SetText("MAX")
+                else tSlot.rankFS:SetTextColor(1, 1, 1, 1); tSlot.rankFS:SetText(safeCur .. " / " .. safeMax) end
+                y = y - (BAR_H + 3)
+            end
+            if #tiers > 0 then y = y - 8 end
 
-                        pSlot.ic = core.scrollChild:CreateTexture(nil, "OVERLAY")
+            -- Ligne du bas : Housing | Recettes (côte à côte)
+            local hp = housingData and housingData[profData.name]
+            local toggleBtn = nil
+            if hp then
+                local rKey = recipeKey(realmName, charName, profData.name)
+                local isExpanded = pluginNs.recipeExpanded[rKey] or false
+                local totalRecipes, knownCount = hp.total or 0, hp.knownCount or 0
 
-                        pSlot.pName = core.scrollChild:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+                recipeToggleUsed = recipeToggleUsed + 1
+                local rSlot = recipeTogglePool[recipeToggleUsed]
+                if not rSlot then
+                    rSlot = {}
+                    rSlot.toggleBtn = CreateFrame("Button", nil, card, "BackdropTemplate")
+                    core.Skin.Button(rSlot.toggleBtn, "bar")
+                    rSlot.arrowTex = rSlot.toggleBtn:CreateTexture(nil, "OVERLAY")
+                    rSlot.arrowTex:SetSize(14, 14); rSlot.arrowTex:SetPoint("LEFT", 6, 0)
+                    rSlot.recipeFS = rSlot.toggleBtn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                    rSlot.recipeFS:SetPoint("LEFT", 24, 0)
+                    rSlot.miniBarBg = rSlot.toggleBtn:CreateTexture(nil, "BACKGROUND")
+                    rSlot.miniBarBg:SetSize(50, 4); rSlot.miniBarBg:SetPoint("RIGHT", -8, 0)
+                    rSlot.miniBarFill = rSlot.toggleBtn:CreateTexture(nil, "ARTWORK")
+                    rSlot.miniBarFill:SetPoint("LEFT", rSlot.miniBarBg, "LEFT", 0, 0)
+                    recipeTogglePool[recipeToggleUsed] = rSlot
+                end
+                toggleBtn = rSlot.toggleBtn
+                toggleBtn:SetParent(card)
+                toggleBtn:SetFrameLevel(lvl)
+                toggleBtn:ClearAllPoints()
+                toggleBtn:SetSize(halfW, 24)
+                toggleBtn:SetPoint("TOPLEFT", card, "TOPLEFT", CARD_PAD, y)
+                toggleBtn:Show()
 
-                        profRowPool[profRowUsed] = pSlot
+                rSlot.arrowTex:SetAtlas(isExpanded and "housing-floor-arrow-down-default" or "housing-floor-arrow-up-default")
+                rSlot.recipeFS:SetTextColor(unpack(T.text))
+                rSlot.recipeFS:SetText(string.format(pluginNs.L("HOUSING_LABEL"), knownCount, totalRecipes))
+                rSlot.miniBarBg:SetColorTexture(unpack(T.roles.input[1]))
+                if totalRecipes > 0 then
+                    local pctR = knownCount / totalRecipes
+                    rSlot.miniBarFill:SetSize(math.max(math.floor(pctR * 50), 1), 4)
+                    rSlot.miniBarFill:SetColorTexture(pctR>=1 and 0 or 0.45, pctR>=1 and 0.85 or 0.55, pctR>=1 and 0.35 or 1.00, 0.9)
+                    rSlot.miniBarBg:Show(); rSlot.miniBarFill:Show()
+                else
+                    rSlot.miniBarBg:Hide(); rSlot.miniBarFill:Hide()
+                end
+
+                toggleBtn:SetScript("OnEnter", function(self)
+                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+                    GameTooltip:SetText(isExpanded and pluginNs.L("HOUSING_FOLD") or pluginNs.L("HOUSING_UNFOLD"), 0.8, 0.8, 1)
+                    GameTooltip:AddLine(string.format(pluginNs.L("HOUSING_KNOWN"), knownCount, totalRecipes), 1, 1, 1)
+                    GameTooltip:Show()
+                end)
+                toggleBtn:SetScript("OnLeave", function() GameTooltip:Hide() end)
+                local capturedKey = rKey
+                toggleBtn:SetScript("OnClick", function()
+                    pluginNs.recipeExpanded[capturedKey] = not pluginNs.recipeExpanded[capturedKey]
+                    pluginNs.ShowProfessions()
+                end)
+
+                if isExpanded then
+                    local capDefs, capKnown = hp.defs, hp.known
+                    deferred[#deferred + 1] = function(parent, yy)
+                        return pluginNs.RenderRecipeGrid(parent, capDefs, capKnown, PADX - 14, yy, contentW)
                     end
-
-                    if profIdx > 1 then
-                        pSlot.profSep:ClearAllPoints()
-                        pSlot.profSep:SetSize(contentW - LEFT_PAD - 14, 1)
-                        pSlot.profSep:SetPoint("TOPLEFT", LEFT_PAD + 14, offsetY - 2)
-                        pSlot.profSep:Show()
-                        offsetY = offsetY - 8
-                    else
-                        pSlot.profSep:Hide()
-                    end
-
-                    pSlot.ic:ClearAllPoints()
-                    pSlot.ic:SetSize(22, 22); pSlot.ic:SetPoint("TOPLEFT", LEFT_PAD + 14, offsetY)
-                    pSlot.ic:SetTexture(profData.icon)
-                    pSlot.ic:Show()
-
-                    pSlot.pName:ClearAllPoints()
-                    pSlot.pName:SetPoint("LEFT", pSlot.ic, "RIGHT", 7, 1)
-                    pSlot.pName:SetText(GetProfDisplayName(profData.name))
-                    pSlot.pName:SetTextColor(playerClassColor.r, playerClassColor.g, playerClassColor.b)
-                    pSlot.pName:Show()
-
-                    offsetY = offsetY - 28
-
-                    if profData.tiers and #profData.tiers > 0 then
-                        for _, tier in ipairs(profData.tiers) do
-                            if not IsExpansionHidden(tier.name) then
-                                local safeMax = (tier.max and tier.max > 0) and tier.max or 1
-                                local safeCur = tier.level or 0
-                                local pct     = math.min(safeCur / safeMax, 1)
-                                local isFull  = (safeCur >= safeMax)
-                                local BAR_H   = 18
-
-                                tierBarUsed = tierBarUsed + 1
-                                local tSlot = tierBarPool[tierBarUsed]
-                                if not tSlot then
-                                    tSlot = {}
-                                    tSlot.bg = CreateFrame("Frame", nil, core.scrollChild, "BackdropTemplate")
-                                    tSlot.bg:SetSize(BAR_WIDTH, BAR_H)
-                                    tSlot.bg:SetBackdrop({ bgFile="Interface\\Buttons\\WHITE8x8", edgeFile="Interface\\Buttons\\WHITE8x8", edgeSize=1 })
-                                    tSlot.bg:SetBackdropColor(0.12, 0.12, 0.15, 0.95); tSlot.bg:SetBackdropBorderColor(0.32, 0.32, 0.38, 1)
-
-                                    tSlot.fill = tSlot.bg:CreateTexture(nil, "ARTWORK")
-                                    tSlot.fill:SetPoint("TOPLEFT", 1, -1); tSlot.fill:SetPoint("BOTTOMLEFT", 1, 1)
-
-                                    tSlot.nameFS = tSlot.bg:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                                    tSlot.nameFS:SetPoint("LEFT", 6, 0); tSlot.nameFS:SetPoint("RIGHT", -52, 0)
-                                    tSlot.nameFS:SetJustifyH("LEFT")
-
-                                    tSlot.rankFS = tSlot.bg:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                                    tSlot.rankFS:SetPoint("RIGHT", -6, 0); tSlot.rankFS:SetJustifyH("RIGHT")
-
-                                    tierBarPool[tierBarUsed] = tSlot
-                                end
-
-                                tSlot.bg:ClearAllPoints()
-                                tSlot.bg:SetPoint("TOPLEFT", LEFT_PAD + 14, offsetY)
-                                tSlot.bg:Show()
-
-                                if pct > 0 then
-                                    tSlot.fill:SetWidth(math.max((BAR_WIDTH - 2) * pct, 2))
-                                    if isFull then tSlot.fill:SetColorTexture(0.10, 0.65, 0.30, 1)
-                                    else tSlot.fill:SetColorTexture(0.20, 0.45, 0.80, 0.85) end
-                                    tSlot.fill:Show()
-                                else
-                                    tSlot.fill:Hide()
-                                end
-
-                                tSlot.nameFS:SetTextColor(1, 1, 1, 1)
-                                tSlot.nameFS:SetText(tier.name or "")
-
-                                if isFull then tSlot.rankFS:SetTextColor(0.20, 1, 0.50, 1); tSlot.rankFS:SetText("MAX")
-                                else tSlot.rankFS:SetTextColor(0.75, 0.75, 0.75, 1); tSlot.rankFS:SetText(safeCur.." / "..safeMax) end
-
-                                offsetY = offsetY - (BAR_H + 2)
-                            end
-                        end
-                        offsetY = offsetY - 6
-                    end
-
-                    -- ── Barre Housing (données fournies par ViewerLog_Housing) ──
-                    -- Même schéma que la barre Recettes : les données viennent
-                    -- d'un module externe via _G.ViewerLogAPI (ici GetHousingRecipes),
-                    -- et c'est cette vue qui dessine la barre + la grille. Si le
-                    -- module est absent, housingData est nil -> pas de barre housing.
-                    local hp = housingData and housingData[profData.name]
-                    local hasHousingRecipes = hp ~= nil
-                    local toggleBtn  = nil
-                    local isExpanded = false
-
-                    if hasHousingRecipes then
-                        local rKey = recipeKey(realmName, charName, profData.name)
-                        isExpanded = pluginNs.recipeExpanded[rKey] or false
-
-                        local totalRecipes = hp.total or 0
-                        local knownCount   = hp.knownCount or 0
-
-                        recipeToggleUsed = recipeToggleUsed + 1
-                        local rSlot = recipeTogglePool[recipeToggleUsed]
-                        if not rSlot then
-                            rSlot = {}
-                            rSlot.toggleBtn = CreateFrame("Button", nil, core.scrollChild, "BackdropTemplate")
-                            rSlot.toggleBtn:SetSize(280, 18)
-                            rSlot.toggleBtn:SetBackdrop({ bgFile="Interface\\Buttons\\WHITE8x8", edgeFile="Interface\\Buttons\\WHITE8x8", edgeSize=1 })
-                            rSlot.toggleBtn:SetBackdropColor(0.08, 0.08, 0.12, 0.85); rSlot.toggleBtn:SetBackdropBorderColor(0.28, 0.28, 0.38, 1)
-
-                            rSlot.arrowTex = rSlot.toggleBtn:CreateTexture(nil, "OVERLAY")
-                            rSlot.arrowTex:SetSize(14, 14); rSlot.arrowTex:SetPoint("LEFT", 3, 0)
-
-                            rSlot.recipeFS = rSlot.toggleBtn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-                            rSlot.recipeFS:SetPoint("LEFT", 21, 0); rSlot.recipeFS:SetTextColor(0.65, 0.65, 0.85)
-
-                            rSlot.miniBarBg = rSlot.toggleBtn:CreateTexture(nil, "BACKGROUND")
-                            rSlot.miniBarBg:SetSize(60, 4); rSlot.miniBarBg:SetPoint("RIGHT", -6, 0); rSlot.miniBarBg:SetColorTexture(0.15, 0.15, 0.20, 1)
-                            rSlot.miniBarFill = rSlot.toggleBtn:CreateTexture(nil, "ARTWORK")
-                            rSlot.miniBarFill:SetPoint("LEFT", rSlot.miniBarBg, "LEFT", 0, 0)
-
-                            recipeTogglePool[recipeToggleUsed] = rSlot
-                        end
-                        toggleBtn = rSlot.toggleBtn
-
-                        toggleBtn:ClearAllPoints()
-                        toggleBtn:SetPoint("TOPLEFT", LEFT_PAD + 14, offsetY)
-                        toggleBtn:Show()
-
-                        rSlot.arrowTex:SetAtlas(isExpanded and "housing-floor-arrow-down-default" or "housing-floor-arrow-up-default")
-                        rSlot.recipeFS:SetText(string.format(pluginNs.L("HOUSING_LABEL"), knownCount, totalRecipes))
-
-                        if totalRecipes > 0 then
-                            local fillW = math.max(math.floor((knownCount / totalRecipes) * 60), 1)
-                            rSlot.miniBarFill:SetSize(fillW, 4)
-                            local pctR = knownCount / totalRecipes
-                            rSlot.miniBarFill:SetColorTexture(pctR>=1 and 0 or 0.45, pctR>=1 and 0.85 or 0.55, pctR>=1 and 0.35 or 1.00, 0.9)
-                            rSlot.miniBarBg:Show(); rSlot.miniBarFill:Show()
-                        else
-                            rSlot.miniBarBg:Hide(); rSlot.miniBarFill:Hide()
-                        end
-
-                        toggleBtn:SetScript("OnEnter", function(self)
-                            self:SetBackdropColor(0.14, 0.14, 0.22, 1); self:SetBackdropBorderColor(0.45, 0.45, 0.65, 1)
-                            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                            GameTooltip:SetText(isExpanded and pluginNs.L("HOUSING_FOLD") or pluginNs.L("HOUSING_UNFOLD"), 0.8, 0.8, 1)
-                            GameTooltip:AddLine(string.format(pluginNs.L("HOUSING_KNOWN"), knownCount, totalRecipes), 1, 1, 1)
-                            GameTooltip:Show()
-                        end)
-                        toggleBtn:SetScript("OnLeave", function(self)
-                            self:SetBackdropColor(0.08, 0.08, 0.12, 0.85); self:SetBackdropBorderColor(0.28, 0.28, 0.38, 1)
-                            GameTooltip:Hide()
-                        end)
-                        local capturedKey = rKey
-                        toggleBtn:SetScript("OnClick", function()
-                            pluginNs.recipeExpanded[capturedKey] = not pluginNs.recipeExpanded[capturedKey]
-                            pluginNs.ShowProfessions()
-                        end)
-                    end
-
-                    -- ── Barre "Recettes" (ViewerLog_Recette) ────────────
-                    -- RenderRecipeBar() se rend elle-même invisible si
-                    -- ViewerLog_Recette n'est pas actif. Ancrée à droite du
-                    -- bouton Housing s'il existe, sinon prend sa place.
-                    offsetY = pluginNs.RenderRecipeBar(core.scrollChild, profData, realmName, charName, toggleBtn, LEFT_PAD, offsetY, contentW)
-
-                    offsetY = offsetY - 24
-                    if hasHousingRecipes and isExpanded then
-                        offsetY = pluginNs.RenderRecipeGrid(core.scrollChild, hp.defs, hp.known, LEFT_PAD, offsetY, contentW)
-                    end
-                    offsetY = offsetY - 4
                 end
             end
 
-            renderProfList(mainProfs)
-            if #secProfs > 0 then offsetY = offsetY - 4; renderProfList(secProfs) end
+            -- Barre « Recettes » (ViewerLog_Recette) : à droite de Housing, ou
+            -- à sa place si le métier n'a pas de recettes housing.
+            local _, gridFn = pluginNs.RenderRecipeBar(card, profData, realmName, charName,
+                toggleBtn, PADX - 14, y, contentW, true, halfW)
+            if gridFn then deferred[#deferred + 1] = gridFn end
+
+            rowH = math.max(rowH, cardH)
+
+            -- Fin de ligne : on avance, puis grilles dépliées sous la ligne
+            if col == ncols - 1 or idx == #visibleProfs then
+                offsetY = rowTop - rowH - 12
+                for _, fn in ipairs(deferred) do offsetY = fn(sc, offsetY) end
+            end
         end
 
-        rowSlot.charSep = rowSlot.charSep or core.scrollChild:CreateTexture(nil, "ARTWORK")
-        rowSlot.charSep:ClearAllPoints()
-        rowSlot.charSep:SetSize(contentW - LEFT_PAD, 1); rowSlot.charSep:SetPoint("TOPLEFT", LEFT_PAD, offsetY - 4)
-        rowSlot.charSep:SetColorTexture(1, 1, 1, 0.06)
-        rowSlot.charSep:Show()
-        offsetY = offsetY - 16
-        end -- hasVisibleProf
+        offsetY = offsetY - 10
+        end -- #visibleProfs
     end
 
-    core.scrollChild:SetHeight(math.abs(offsetY) + 60)
+    sc:SetHeight(math.abs(offsetY) + 60)
     HideUnusedPools()
 end

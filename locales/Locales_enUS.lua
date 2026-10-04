@@ -5,6 +5,25 @@ local _, ns = ...
 -- ====================================================
 ns.locales["enUS"] = {
     -- Settings & management
+    -- Interface / themes
+    UI_TITLE         = "ALTVIEWERLOG",
+    UI_AUTHOR        = "By Soloup_ever",
+    LANG_NAME_FR     = "Français",
+    LANG_NAME_EN     = "English",
+    THEME_NAME_AVL      = "AltViewerLog",
+    THEME_NAME_BLIZZARD = "Blizzard",
+    REALM_CHAR_COUNT = "%d characters saved",
+    CHAR_LEVEL       = "Lvl %d",
+    CHAR_ILVL        = "ilvl %d",
+    PLAYED_LABEL     = "Time played: %s",
+    GEAR_TITLE       = "Gear & Equipment",
+    TIME_AGO_DH      = "%dd %dh ago",
+    TIME_AGO_HM      = "%dh %dm ago",
+    TIME_AGO_M       = "%dm ago",
+    TIME_DH          = "%dd %dh",
+    TIME_HM          = "%dh %dm",
+    TIME_M           = "%dm",
+
     SETTINGS_TITLE   = "Settings and Management",
     SORT_POP         = "Show most populated realms at the top",
     LANG_TITLE       = "Addon Language:",

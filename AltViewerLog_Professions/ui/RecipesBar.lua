@@ -328,14 +328,18 @@ end
 --- recettes housing curées). Ne fait rien — et cache le pool à
 --- l'index courant — si ViewerLog_Recette n'est pas actif.
 --- @return number  nouveau offsetY
-function pluginNs.RenderRecipeBar(parent, profData, realmName, charName, anchorFrame, LEFT_PAD, offsetY, contentW)
+-- Mode carte (inCard = true) : la barre est posée dans `parent` (la carte du
+--- métier), à droite de anchorFrame ou en bas à gauche, largeur `width`. La
+--- grille dépliée n'est pas dessinée ici : une fonction fn(scrollChild, y) qui
+--- la dessine est renvoyée en 2e valeur, appelée par la vue sous la rangée.
+function pluginNs.RenderRecipeBar(parent, profData, realmName, charName, anchorFrame, LEFT_PAD, offsetY, contentW, inCard, width)
     local vlAPI = _G.ViewerLogAPI
     if not vlAPI or not vlAPI.GetRecipes then
         -- ViewerLog_Recette pas actif : rien à afficher. Le pool ne
         -- gagne pas d'index ici (pas de barUsed = barUsed + 1) — ce
         -- qui reste au-delà du dernier index utilisé par un appel
         -- précédent est déjà masqué par HideUnusedRecipeBarPools().
-        return offsetY
+        return offsetY, nil
     end
 
     barUsed = barUsed + 1
@@ -343,21 +347,20 @@ function pluginNs.RenderRecipeBar(parent, profData, realmName, charName, anchorF
     if not bSlot then
         bSlot = {}
         bSlot.bg = CreateFrame("Button", nil, parent, "BackdropTemplate")
-        bSlot.bg:SetSize(280, 18)
-        bSlot.bg:SetBackdrop({ bgFile="Interface\\Buttons\\WHITE8x8", edgeFile="Interface\\Buttons\\WHITE8x8", edgeSize=1 })
-        bSlot.bg:SetBackdropColor(0.08, 0.08, 0.12, 0.85); bSlot.bg:SetBackdropBorderColor(0.28, 0.28, 0.38, 1)
+        local skin = _G.AltViewerLogAPI and _G.AltViewerLogAPI.Skin
+        if skin then skin.Button(bSlot.bg, "bar") end
 
         -- Même agencement que le bouton Housing (arrowTex / texte /
         -- mini-barre), mêmes atlas de flèche pour une identité
         -- visuelle cohérente entre les deux barres.
         bSlot.arrowTex = bSlot.bg:CreateTexture(nil, "OVERLAY")
-        bSlot.arrowTex:SetSize(14, 14); bSlot.arrowTex:SetPoint("LEFT", 3, 0)
+        bSlot.arrowTex:SetSize(14, 14); bSlot.arrowTex:SetPoint("LEFT", 6, 0)
 
         bSlot.textFS = bSlot.bg:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        bSlot.textFS:SetPoint("LEFT", 21, 0); bSlot.textFS:SetTextColor(0.65, 0.65, 0.85)
+        bSlot.textFS:SetPoint("LEFT", 24, 0)
 
         bSlot.miniBarBg = bSlot.bg:CreateTexture(nil, "BACKGROUND")
-        bSlot.miniBarBg:SetSize(60, 4); bSlot.miniBarBg:SetPoint("RIGHT", -6, 0); bSlot.miniBarBg:SetColorTexture(0.15, 0.15, 0.20, 1)
+        bSlot.miniBarBg:SetSize(50, 4); bSlot.miniBarBg:SetPoint("RIGHT", -8, 0)
         bSlot.miniBarFill = bSlot.bg:CreateTexture(nil, "ARTWORK")
         bSlot.miniBarFill:SetPoint("LEFT", bSlot.miniBarBg, "LEFT", 0, 0)
 
@@ -365,9 +368,20 @@ function pluginNs.RenderRecipeBar(parent, profData, realmName, charName, anchorF
     end
 
     bSlot.bg:ClearAllPoints()
-    if anchorFrame then
+    if inCard then
+        bSlot.bg:SetParent(parent)
+        bSlot.bg:SetFrameLevel(parent:GetFrameLevel() + 1)
+        bSlot.bg:SetSize(width or 140, 24)
+        if anchorFrame then
+            bSlot.bg:SetPoint("TOPLEFT", anchorFrame, "TOPRIGHT", 10, 0)
+        else
+            bSlot.bg:SetPoint("TOPLEFT", parent, "TOPLEFT", 12, offsetY)
+        end
+    elseif anchorFrame then
+        bSlot.bg:SetSize(280, 18)
         bSlot.bg:SetPoint("TOPLEFT", anchorFrame, "TOPRIGHT", 10, 0)
     else
+        bSlot.bg:SetSize(280, 18)
         -- Pas de bouton Housing pour ce métier : la barre Recettes
         -- prend sa place plutôt que de ne jamais s'afficher.
         bSlot.bg:SetPoint("TOPLEFT", parent, "TOPLEFT", LEFT_PAD + 14, offsetY)
@@ -407,7 +421,9 @@ function pluginNs.RenderRecipeBar(parent, profData, realmName, charName, anchorF
         local rKnown, rTotal = profRecipes.known or 0, profRecipes.total
 
         bSlot.arrowTex:SetAtlas(effExpanded and "housing-floor-arrow-down-default" or "housing-floor-arrow-up-default")
+        bSlot.textFS:SetTextColor(unpack(_G.AltViewerLogAPI.Theme.text))
         bSlot.textFS:SetText(string.format(pluginNs.L("RBAR_LABEL"), rKnown, rTotal))
+        bSlot.miniBarBg:SetColorTexture(unpack(_G.AltViewerLogAPI.Theme.roles.input[1]))
 
         if rTotal > 0 then
             local fillW = math.max(math.floor((rKnown / rTotal) * 60), 1)
@@ -420,14 +436,12 @@ function pluginNs.RenderRecipeBar(parent, profData, realmName, charName, anchorF
         end
 
         bSlot.bg:SetScript("OnEnter", function(self)
-            self:SetBackdropBorderColor(0.45, 0.45, 0.65, 1)
             GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
             GameTooltip:SetText(string.format(pluginNs.L("RBAR_TOOLTIP"), rKnown, rTotal), 1, 1, 1)
             GameTooltip:AddLine(isExpanded and pluginNs.L("RBAR_FOLD") or pluginNs.L("RBAR_UNFOLD"), 0.8, 0.8, 1)
             GameTooltip:Show()
         end)
         bSlot.bg:SetScript("OnLeave", function(self)
-            self:SetBackdropBorderColor(0.28, 0.28, 0.38, 1)
             GameTooltip:Hide()
         end)
 
@@ -452,12 +466,17 @@ function pluginNs.RenderRecipeBar(parent, profData, realmName, charName, anchorF
     end
 
     if hasData and effExpanded then
+        if inCard then
+            local q = searching and query or nil
+            return offsetY, function(scrollChild, yy)
+                return RenderGrid(scrollChild, profRecipes, LEFT_PAD, yy, contentW, q)
+            end
+        end
         -- Démarrer la grille SOUS la rangée de boutons (barre Recettes/Housing,
-        -- ~18px) : sinon le 1er groupe (en-tête + compteur) se dessine à la
-        -- hauteur des boutons et passe derrière eux.
+        -- ~18px) : sinon le 1er groupe se dessine à la hauteur des boutons.
         offsetY = RenderGrid(parent, profRecipes, LEFT_PAD, offsetY - 24, contentW,
                              searching and query or nil)
     end
 
-    return offsetY
+    return offsetY, nil
 end

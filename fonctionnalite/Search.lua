@@ -29,7 +29,7 @@ function ns.ShowSearch()
 
     -- ── Couleurs thème courant ──────────────────────────────────────
     local function GetThemeBorder()
-        local b = ns._themeBorder or { 0.45, 0.15, 0.70 }
+        local b = ns.Theme.heading
         return b[1], b[2], b[3]
     end
 
@@ -39,27 +39,16 @@ function ns.ShowSearch()
     bar:SetPoint("TOPLEFT",  ns.scrollChild, "TOPLEFT",   SIDE_PAD, -10)
     bar:SetPoint("TOPRIGHT", ns.scrollChild, "TOPRIGHT", -SIDE_PAD, -10)
     local bR, bG, bB = GetThemeBorder()
-    bar:SetBackdrop({ bgFile   = "Interface\\Buttons\\WHITE8x8",
-                      edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1 })
-    bar:SetBackdropColor(0.07, 0.07, 0.09, 1)
-    bar:SetBackdropBorderColor(bR * 0.6, bG * 0.6, bB * 0.6, 1)
+    ns.Skin.Frame(bar, "input")
 
     -- ── Bouton filtre (ancré à droite dans la barre) ───────────────
     local filterBtn = CreateFrame("Button", nil, bar, "BackdropTemplate")
     filterBtn:SetSize(FILTER_W, 28)
     filterBtn:SetPoint("RIGHT", bar, "RIGHT", -4, 0)
-    filterBtn:SetBackdrop({ bgFile   = "Interface\\Buttons\\WHITE8x8",
-                            edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1 })
-    filterBtn:SetBackdropColor(0.13, 0.08, 0.20, 1)
-    filterBtn:SetBackdropBorderColor(bR, bG, bB, 0.9)
+    ns.Skin.Button(filterBtn)
     filterBtn:SetNormalFontObject("GameFontNormal")
     filterBtn:SetText(ns.L("FILTER_ALL"))
-    filterBtn:SetScript("OnEnter", function(s)
-        s:SetBackdropColor(0.20, 0.12, 0.30, 1)
-    end)
-    filterBtn:SetScript("OnLeave", function(s)
-        s:SetBackdropColor(0.13, 0.08, 0.20, 1)
-    end)
+    filterBtn:GetFontString():SetTextColor(unpack(ns.Theme.gold))
 
     -- ── EditBox ────────────────────────────────────────────────────
     local editBox = CreateFrame("EditBox", nil, bar)
@@ -72,13 +61,13 @@ function ns.ShowSearch()
 
     local ebBg = editBox:CreateTexture(nil, "BACKGROUND")
     ebBg:SetAllPoints()
-    ebBg:SetColorTexture(0.08, 0.07, 0.12, 1)
+    ebBg:SetColorTexture(0, 0, 0, 0)
 
     local ebLine = editBox:CreateTexture(nil, "OVERLAY")
     ebLine:SetPoint("BOTTOMLEFT")
     ebLine:SetPoint("BOTTOMRIGHT")
     ebLine:SetHeight(1)
-    ebLine:SetColorTexture(bR * 0.7, bG * 0.7, bB * 0.7, 1)
+    ebLine:SetColorTexture(0, 0, 0, 0)
 
     editBox:SetText(ns.L("SEARCH_TEXT"))
 
@@ -86,14 +75,12 @@ function ns.ShowSearch()
         if self:GetText():lower() == ns.L("SEARCH_TEXT"):lower() then
             self:SetText("")
         end
-        local r, g, b = GetThemeBorder()
-        ebLine:SetColorTexture(math.min(r * 1.8, 1), math.min(g * 1.8, 1), math.min(b * 1.8, 1), 1)
+        bar._hover = true; ns.Skin.Paint(bar)
     end)
 
     editBox:SetScript("OnEditFocusLost", function(self)
         if self:GetText() == "" then self:SetText(ns.L("SEARCH_TEXT")) end
-        local r, g, b = GetThemeBorder()
-        ebLine:SetColorTexture(r * 0.7, g * 0.7, b * 0.7, 1)
+        bar._hover = false; ns.Skin.Paint(bar)
     end)
 
     editBox:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
@@ -124,10 +111,7 @@ function ns.ShowSearch()
     dropdown:SetWidth(FILTER_W)
     dropdown:SetFrameLevel(ns.mainFrame:GetFrameLevel() + 60)
     dropdown:SetPoint("TOPRIGHT", filterBtn, "BOTTOMRIGHT", 0, -2)
-    dropdown:SetBackdrop({ bgFile   = "Interface\\Buttons\\WHITE8x8",
-                           edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1 })
-    dropdown:SetBackdropColor(0.08, 0.06, 0.14, 0.98)
-    dropdown:SetBackdropBorderColor(bR, bG, bB, 1)
+    ns.Skin.Frame(dropdown, "panel")
     dropdown:Hide()
 
     local closeW = CreateFrame("Frame", nil, UIParent)
@@ -161,7 +145,7 @@ function ns.ShowSearch()
         end
         local hl = row:CreateTexture(nil, "HIGHLIGHT")
         hl:SetAllPoints()
-        hl:SetColorTexture(bR * 0.45, bG * 0.25, bB * 0.65, 0.75)
+        hl:SetColorTexture(bR, bG, bB, 0.18)
 
         local lbl = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         lbl:SetPoint("LEFT", 8, 0)
@@ -345,17 +329,7 @@ function ns.ShowSearch()
             local card = CreateFrame("Frame", nil, resultHolder, "BackdropTemplate")
             card:SetSize(cardW, cardH)
             card:SetPoint("TOPLEFT", resultHolder, "TOPLEFT", 0, y)
-            card:SetBackdrop({
-                bgFile   = "Interface\\Buttons\\WHITE8x8",
-                edgeFile = "Interface\\Buttons\\WHITE8x8",
-                edgeSize = 1,
-            })
-            card:SetBackdropColor(
-                tr * 0.07 + 0.05,
-                tg * 0.04 + 0.04,
-                tb * 0.11 + 0.06,
-                1)
-            card:SetBackdropBorderColor(tr, tg, tb, 0.65)
+            ns.Skin.Frame(card, "card")
 
             -- ── Nom du personnage ─────────────────────────────────────
             local nameTxt = card:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -364,16 +338,16 @@ function ns.ShowSearch()
                 math.floor(c.r * 255), math.floor(c.g * 255), math.floor(c.b * 255))
             nameTxt:SetText(
                 "|cff" .. classHex .. entry.charName .. "|r"
-                .. "  |cff" .. classHex .. entry.realmName .. "|r"
+                .. "  |cff" .. ns.ColorHex(ns.Theme.textDim) .. entry.realmName .. "|r"
             )
 
             -- ── Compteur à droite ─────────────────────────────────────
             local cntTxt = card:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             cntTxt:SetPoint("RIGHT", card, "RIGHT", -10, (cardH * 0.5) - (cardH - 14))
             cntTxt:SetPoint("TOP",   card, "TOP",    0,  -6)
-            cntTxt:SetTextColor(tr, tg, tb)
+            cntTxt:SetTextColor(unpack(ns.Theme.textDim))
             cntTxt:SetText(entry.count
-                .. " |cffaaaaaa" .. ns.L("SEARCH_RESULTS") .. "|r")
+                .. " " .. ns.L("SEARCH_RESULTS"))
             cntTxt:SetJustifyH("RIGHT")
 
             -- ── Séparateur ───────────────────────────────────────────
@@ -381,7 +355,7 @@ function ns.ShowSearch()
             sep:SetHeight(1)
             sep:SetPoint("TOPLEFT",  card, "TOPLEFT",   3, -26)
             sep:SetPoint("TOPRIGHT", card, "TOPRIGHT",  -3, -26)
-            sep:SetColorTexture(tr, tg, tb, 0.20)
+            sep:SetColorTexture(tr, tg, tb, 0.25)
 
             -- ── Icônes des items ──────────────────────────────────────
             local col = 0
