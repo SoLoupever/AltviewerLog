@@ -236,9 +236,9 @@ ns.UpdateBottomBar = function()
     -- Total
     local grandTotal    = charTotal + wbDisplay
 
-    -- Libellé atténué + valeur claire (couleurs du thème actif)
+    -- Libellé couleur titre + valeur claire (thème actif)
     local t   = ns.Theme
-    local dim = "|cff" .. ns.ColorHex(t.textDim)
+    local dim = "|cff" .. t.title  -- libellés = couleur du titre
     local val = "|cff" .. ns.ColorHex(t.text)
     ns.bbGold.fs:SetText(dim .. ns.L("TOTAL_GOLD") .. "|r  " .. GetCoinTextureString(grandTotal))
     ns.bbTime.fs:SetText(dim .. ns.L("TOTAL_TIME") .. "|r  " .. val

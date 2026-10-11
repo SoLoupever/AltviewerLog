@@ -241,7 +241,7 @@ function pluginNs.ShowGraph()
         r.pct:SetPoint("LEFT", r.time, "RIGHT", 4, 0)
         r.pct:SetWidth(PCT_W - 4)
         r.pct:SetText(string.format("%d%%", math.floor(info.time / total * 100 + 0.5)))
-        r.pct:SetTextColor(unpack(T.textDim))
+        r.pct:SetTextColor(color.r, color.g, color.b)
         r.frame:Show()
     end
     for i = #sorted + 1, #ui.rows do ui.rows[i].frame:Hide() end

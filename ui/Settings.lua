@@ -139,7 +139,7 @@ function ns.ShowSettings()
         function(v) Settings().bankInline = v end)
     cy = MakeCheckbox(card, cy, ns.L("DEBUG_MODE"),
         function() return Settings().debugMode == true end,
-        function(v) Settings().debugMode = v end)
+        function(v) Settings().debugMode = v; ns.ShowSettings() end)
 
     cy = cy - 6
     local sep = ns.Skin.Rule(card)
@@ -147,13 +147,16 @@ function ns.ShowSettings()
     sep:SetPoint("TOPRIGHT", card, "TOPRIGHT", -PAD, cy)
     cy = cy - 14
 
-    local lang = Settings().lang
-    cy = MakeChoiceRow(card, cy, ns.L("LANG_TITLE"), {
-        { label = ns.L("LANG_NAME_FR"), active = (lang == "frFR"),
-          onClick = function() Settings().lang = "frFR"; StaticReload() end },
-        { label = ns.L("LANG_NAME_EN"), active = (lang == "enUS"),
-          onClick = function() Settings().lang = "enUS"; StaticReload() end },
-    })
+    -- Langue : visible uniquement en mode debug
+    if Settings().debugMode == true then
+        local lang = Settings().lang
+        cy = MakeChoiceRow(card, cy, ns.L("LANG_TITLE"), {
+            { label = ns.L("LANG_NAME_FR"), active = (lang == "frFR"),
+              onClick = function() Settings().lang = "frFR"; StaticReload() end },
+            { label = ns.L("LANG_NAME_EN"), active = (lang == "enUS"),
+              onClick = function() Settings().lang = "enUS"; StaticReload() end },
+        })
+    end
 
     local choices = {}
     for _, key in ipairs(ns.THEME_ORDER) do

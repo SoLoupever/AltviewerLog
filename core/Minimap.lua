@@ -23,6 +23,7 @@ function ns.InitMinimap()
             else
                 ns.mainFrame:Show()
                 ns.RefreshCharacterList()
+                ns.Skin.SetActive(ns.btnChars)  -- OnShow a surligné l'ancienne vue
             end
         end,
     }, AltViewerLogDB.minimap)

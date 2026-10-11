@@ -338,14 +338,14 @@ function ns.ShowSearch()
                 math.floor(c.r * 255), math.floor(c.g * 255), math.floor(c.b * 255))
             nameTxt:SetText(
                 "|cff" .. classHex .. entry.charName .. "|r"
-                .. "  |cff" .. ns.ColorHex(ns.Theme.textDim) .. entry.realmName .. "|r"
+                .. "  |cff" .. classHex .. entry.realmName .. "|r"
             )
 
             -- ── Compteur à droite ─────────────────────────────────────
             local cntTxt = card:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             cntTxt:SetPoint("RIGHT", card, "RIGHT", -10, (cardH * 0.5) - (cardH - 14))
             cntTxt:SetPoint("TOP",   card, "TOP",    0,  -6)
-            cntTxt:SetTextColor(unpack(ns.Theme.textDim))
+            cntTxt:SetTextColor(unpack(ns.Theme.gold))
             cntTxt:SetText(entry.count
                 .. " " .. ns.L("SEARCH_RESULTS"))
             cntTxt:SetJustifyH("RIGHT")

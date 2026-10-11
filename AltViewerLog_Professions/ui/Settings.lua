@@ -19,16 +19,7 @@ local function TextWidth(text, fontObj)
 end
 
 function pluginNs.InjectProfSettings(scrollChild, y)
-    -- En-tête de section — point d'extension conservé pour les futures
-    -- options Métiers. L'ancienne option « Aperçu 2D housing » a migré
-    -- dans le module ViewerLog_Housing (ui/Settings.lua), qui enregistre
-    -- sa propre section via core.RegisterSettingsSection.
-    local secLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    secLabel:SetPoint("TOPLEFT", 20, y)
-    secLabel:SetText("|cff00ff00AltViewerLog_Prof|r")
-    y = y - 26
-
-    -- Ajouter ici d'autres options Métiers à l'avenir
-
+    -- Aucune option pour l'instant : y inchangé = carte masquée.
+    -- Ajouter les futures options Métiers ici.
     return y
 end

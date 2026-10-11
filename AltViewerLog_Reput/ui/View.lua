@@ -66,7 +66,7 @@ local function HideUnusedPoolSlots()
     end
     for i = expHeaderUsed + 1, #expHeaderPool do
         local s = expHeaderPool[i]
-        s.bg:Hide(); s.acc:Hide(); s.fs:Hide()
+        s.bg:Hide(); s.fs:Hide()
     end
 end
 
@@ -79,7 +79,6 @@ local function DrawExpansionHeader(scrollChild, rowY, barW, label)
     if not slot then
         slot = {}
         slot.bg  = scrollChild:CreateTexture(nil, "BACKGROUND")
-        slot.acc = scrollChild:CreateTexture(nil, "ARTWORK")
         slot.fs  = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         slot.fs:SetJustifyH("LEFT")
         slot.fs:SetJustifyV("MIDDLE")
@@ -91,18 +90,13 @@ local function DrawExpansionHeader(scrollChild, rowY, barW, label)
     slot.bg:SetSize(totalW + 6, EXP_HEADER_H)
     slot.bg:SetColorTexture(ACCENT[1] * 0.22 + 0.04, ACCENT[2] * 0.14 + 0.04, ACCENT[3] * 0.30 + 0.05, 1)
 
-    slot.acc:ClearAllPoints()
-    slot.acc:SetPoint("TOPLEFT", MARGIN_L - 6, rowY)
-    slot.acc:SetSize(3, EXP_HEADER_H)
-    slot.acc:SetColorTexture(ACCENT[1], ACCENT[2], ACCENT[3], 1)
-
     slot.fs:ClearAllPoints()
     slot.fs:SetPoint("TOPLEFT", MARGIN_L + 8, rowY)
     slot.fs:SetSize(totalW, EXP_HEADER_H)
     slot.fs:SetText(label:upper())
     slot.fs:SetTextColor(EXP_HEADER_COLOR[1], EXP_HEADER_COLOR[2], EXP_HEADER_COLOR[3])
 
-    slot.bg:Show(); slot.acc:Show(); slot.fs:Show()
+    slot.bg:Show(); slot.fs:Show()
 end
 
 -- ── État courant de la vue ────────────────────────────────────────

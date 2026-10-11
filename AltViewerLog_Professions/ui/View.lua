@@ -891,7 +891,7 @@ function pluginNs.ShowProfessions()
             rowSlot.charBlock:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8" })
             rowSlot.charLabel = rowSlot.charBlock:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
             rowSlot.charLabel:SetPoint("LEFT", 14, 0)
-            rowSlot.lvlFS = rowSlot.charBlock:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            rowSlot.lvlFS = rowSlot.charBlock:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             rowSlot.lvlFS:SetPoint("RIGHT", -14, 0)
             charRowPool[charRowUsed] = rowSlot
         end
@@ -902,11 +902,14 @@ function pluginNs.ShowProfessions()
         charBlock:SetBackdropColor(c.r*0.22 + 0.05, c.g*0.22 + 0.05, c.b*0.22 + 0.05, 1)
         charBlock:Show()
 
-        charLabel:SetTextColor(c.r, c.g, c.b)
-        charLabel:SetText(string.format("%s |cff%s%s|r", charName, core.ColorHex(T.textDim), realmName))
+        -- nom : classe éclaircie / serveur : classe
+        local lr, lg, lb = c.r + (1 - c.r) * 0.35, c.g + (1 - c.g) * 0.35, c.b + (1 - c.b) * 0.35
+        charLabel:SetTextColor(lr, lg, lb)
+        charLabel:SetText(string.format("%s |cff%s%s|r", charName,
+            core.ColorHex({ c.r, c.g, c.b }), realmName))
         if charData.level then
             rowSlot.lvlFS:SetText(core.L("LEVEL_SHORT") .. charData.level)
-            rowSlot.lvlFS:SetTextColor(unpack(T.textDim))
+            rowSlot.lvlFS:SetTextColor(unpack(T.text))
             rowSlot.lvlFS:Show()
         else
             rowSlot.lvlFS:Hide()
