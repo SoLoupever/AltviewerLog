@@ -107,12 +107,12 @@ local function ShowGoldTooltip(anchor)
             GameTooltip:AddDoubleLine(
                 string.format("|cff%02x%02x%02x%s|r |cff555555(%s)|r",
                     math.floor(r * 255), math.floor(g * 255), math.floor(b * 255), d.name, d.realm),
-                GetCoinTextureString(d.gold),
+                ns.FormatMoney(d.gold),
                 1, 1, 1,  1, 1, 1)
         end
         GameTooltip:AddDoubleLine(
             "|cffcccccc  Sous-total|r",
-            GetCoinTextureString(charTotal),
+            ns.FormatMoney(charTotal),
             1, 1, 1,  1, 1, 1)
     end
 
@@ -128,7 +128,7 @@ local function ShowGoldTooltip(anchor)
     if wbDisplay > 0 then
         GameTooltip:AddDoubleLine(
             "|cff00ccff" .. ns.L("BTN_WARBAND") .. "|r",
-            GetCoinTextureString(wbDisplay),
+            ns.FormatMoney(wbDisplay),
             1, 1, 1,  1, 1, 1)
     else
         GameTooltip:AddLine(isCached
@@ -139,7 +139,7 @@ local function ShowGoldTooltip(anchor)
     GameTooltip:AddLine(" ")
     GameTooltip:AddDoubleLine(
         "|cffffff00" .. ns.L("TOTAL_GOLD") .. "|r",
-        GetCoinTextureString(grandTotal),
+        ns.FormatMoney(grandTotal),
         1, 1, 0,  1, 1, 0)
     GameTooltip:Show()
 end
@@ -240,7 +240,7 @@ ns.UpdateBottomBar = function()
     local t   = ns.Theme
     local dim = "|cff" .. t.title  -- libellés = couleur du titre
     local val = "|cff" .. ns.ColorHex(t.text)
-    ns.bbGold.fs:SetText(dim .. ns.L("TOTAL_GOLD") .. "|r  " .. GetCoinTextureString(grandTotal))
+    ns.bbGold.fs:SetText(dim .. ns.L("TOTAL_GOLD") .. "|r  " .. ns.FormatMoney(grandTotal))
     ns.bbTime.fs:SetText(dim .. ns.L("TOTAL_TIME") .. "|r  " .. val
         .. (ns.FormatTime and ns.FormatTime(CountTotalTime()) or "?") .. "|r")
     ns.bbChars.fs:SetText(dim .. ns.L("TOTAL_CHARS") .. "|r  " .. val .. CountTotalChars() .. "|r")

@@ -189,9 +189,9 @@ function ns.ShowSearch()
 
         -- ── Filtre un item : répond-il aux critères ? ──────────────
         local function ItemMatches(id)
-            local _, _, _, invTypeStr, _, classID, subClassID = GetItemInfoInstant(id)
+            local _, _, _, invTypeStr, _, classID, subClassID = ns.GetItemInfoInstant(id)
             if hasText then
-                local name = GetItemInfo(id)
+                local name = ns.GetItemInfo(id)
                 local nameLow  = name and name:lower()
                 local textLow  = filterText:lower()
                 local nameHit  = nameLow and nameLow:find(textLow, 1, true)

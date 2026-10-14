@@ -78,8 +78,8 @@ SlashCmdList["ALTVIEWER"] = function(msg)
             local saved  = ViewerLogDB and ViewerLogDB.warbandGold
             ns.DBG(string.format(
                 "|cffff9900" .. ns.L("SLASH_DEBUG_GOLD_LINE"),
-                live ~= nil and GetCoinTextureString(live) or ("|cff808080" .. ns.L("SLASH_DEBUG_BANK_CLOSED") .. "|r"),
-                saved and GetCoinTextureString(saved) or "|cff808080nil|r"))
+                live ~= nil and ns.FormatMoney(live) or ("|cff808080" .. ns.L("SLASH_DEBUG_BANK_CLOSED") .. "|r"),
+                saved and ns.FormatMoney(saved) or "|cff808080nil|r"))
         end
         ns.DBG("|cff888888" .. ns.L("SLASH_DEBUG_GOLD_REPORT") .. "|r")
         return

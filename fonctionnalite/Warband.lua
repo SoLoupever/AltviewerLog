@@ -37,7 +37,7 @@ function ns.ShowWarbandBank()
 
         local goldLabel = goldFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         goldLabel:SetPoint("LEFT", 8, 0)
-        goldLabel:SetText("|cffffd100" .. ns.L("TOTAL_GOLD") .. "|r " .. GetCoinTextureString(wbGold))
+        goldLabel:SetText("|cffffd100" .. ns.L("TOTAL_GOLD") .. "|r " .. ns.FormatMoney(wbGold))
     end
 
     local warbandData = ns.DP_GetWarbandBank()

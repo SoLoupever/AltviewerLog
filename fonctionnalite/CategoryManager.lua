@@ -41,8 +41,7 @@ local function GetLive()
 end
 
 local function ItemInfoOK(id)
-    local f = (C_Item and C_Item.GetItemInfoInstant) or GetItemInfoInstant
-    return f and f(id) ~= nil
+    return ns.GetItemInfoInstant(id) ~= nil
 end
 
 local Rebuild  -- déclarée plus bas

@@ -327,7 +327,7 @@ local function FillCard(btn, rowW, offsetY, charName, realmName, data, isOnline)
     end
 
     -- Or + temps joué
-    btn.goldText:SetText(GetCoinTextureString((data and data.gold) or 0))
+    btn.goldText:SetText(ns.FormatMoney((data and data.gold) or 0))
     local played = FormatTimePlayed((data and data.timePlayed) or nil)
     btn.timeText:SetText(played ~= "" and ("|cff" .. dimHex
         .. ns.L("PLAYED_LABEL"):format(played) .. "|r") or "")

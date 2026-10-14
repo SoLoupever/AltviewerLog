@@ -11,8 +11,6 @@ local addonName, ns = ...
 --   ShowSettings()    → Settings.lua
 -- ====================================================
 
-local GetItemClassInfo    = GetItemClassInfo
-local GetItemSubClassInfo = GetItemSubClassInfo
 local select              = select
 local pairs               = pairs
 local ipairs              = ipairs
@@ -25,7 +23,6 @@ ns.AVL_CAT_CACHE = AVL_CAT_CACHE
 
 local SPLIT_AT_SUBCLASS = { [4]=true, [2]=true }
 local HOUSING_CLASS     = { [20]=true }
-local GetItemInfoInstant = GetItemInfoInstant
 local GetLocale          = GetLocale
 
 -- Traduit un libellé de catégorie selon la LANGUE DE L'ADDON, pas celle du
@@ -50,7 +47,7 @@ end
 local function AVL_GetBlizzardCategory(itemID)
     if AVL_CAT_CACHE[itemID] then return AVL_CAT_CACHE[itemID] end
 
-    local _, itemType, itemSubType, itemEquipLoc, _, classID, subClassID = GetItemInfoInstant(itemID)
+    local _, itemType, itemSubType, itemEquipLoc, _, classID, subClassID = ns.GetItemInfoInstant(itemID)
     if not classID then return nil end
 
     local key, label
@@ -58,17 +55,17 @@ local function AVL_GetBlizzardCategory(itemID)
     if SPLIT_AT_SUBCLASS[classID] and subClassID and subClassID >= 1 then
         key   = "B_"..classID.."_"..subClassID
         local apiStr = (itemSubType and itemSubType ~= "") and itemSubType
-                       or GetItemSubClassInfo(classID, subClassID)
+                       or ns.GetItemSubClassInfo(classID, subClassID)
         label = AVL_TranslateCat(classID, subClassID, apiStr)
     elseif HOUSING_CLASS[classID] then
         key   = "B_HOUSING"
         local apiStr = (itemType and itemType ~= "") and itemType
-                       or GetItemClassInfo(classID)
+                       or ns.GetItemClassInfo(classID)
         label = AVL_TranslateCat(classID, nil, apiStr)
     else
         key   = "B_"..classID
         local apiStr = (itemType and itemType ~= "") and itemType
-                       or GetItemClassInfo(classID)
+                       or ns.GetItemClassInfo(classID)
         label = AVL_TranslateCat(classID, nil, apiStr)
     end
 

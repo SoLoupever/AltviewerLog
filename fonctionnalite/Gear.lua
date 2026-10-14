@@ -104,7 +104,7 @@ local function ParseItemStringStructure(itemString)
         if id > 0 then
             -- GetItemInfoInstant est synchrone : lit le cache statique du client
             -- sans requête réseau. classID 3 = LE_ITEM_CLASS_GEM.
-            local _, _, _, _, _, classID = GetItemInfoInstant(id)
+            local _, _, _, _, _, classID = ns.GetItemInfoInstant(id)
             if classID == 3 then
                 gemIDs[#gemIDs + 1] = id
             end
@@ -225,7 +225,7 @@ local function RenderSlot(slotName, colX, colY, charData, classColor)
     local item = Item:CreateFromItemLink(itemString)
     item:ContinueOnItemLoad(function()
         -- Icône, nom, rareté
-        local itemName, _, itemRarity, _, _, _, _, _, itemEquipLoc, itemTexture = GetItemInfo(itemString)
+        local itemName, _, itemRarity, _, _, _, _, _, itemEquipLoc, itemTexture = ns.GetItemInfo(itemString)
 
         -- Garde rétrocompat : données corrompues ou legacy (sac, ammo, misc…)
         -- Le scanner valide désormais à la source, mais des entrées
@@ -265,7 +265,7 @@ local function RenderSlot(slotName, colX, colY, charData, classColor)
             if gemID then
                 local gemItem = Item:CreateFromItemID(gemID)
                 gemItem:ContinueOnItemLoad(function()
-                    fs:SetText(GetItemInfo(gemID) or "")
+                    fs:SetText(ns.GetItemInfo(gemID) or "")
                 end)
             end
         end

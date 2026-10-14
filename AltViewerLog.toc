@@ -19,6 +19,8 @@ locales\Locales_enUS.lua
 
 ## ── NOYAU ─────────────────────────────────────────────────────────
 core\Init.lua
+core\Money.lua
+core\ItemAPI.lua
 core\Debug.lua
 core\DataProvider.lua
 core\WarbandGold.lua
