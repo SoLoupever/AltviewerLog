@@ -1,4 +1,4 @@
-## Interface: 120100
+## Interface: 120105
 ## Title: AltViewerLog
 ## Notes: Visualiseur multi-personnages : sacs, banque, bataillon, personnages
 ## Author: SoLoup_ever

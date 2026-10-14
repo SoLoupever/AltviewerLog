@@ -1,4 +1,4 @@
-## Interface: 120100
+## Interface: 120105
 ## Title: AltViewerLog |cff00aaff[Guilde]|r
 ## Notes: Affichage du coffre de guilde pour AltViewerLog
 ## Author: SoLoup_ever

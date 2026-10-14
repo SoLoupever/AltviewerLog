@@ -1,4 +1,4 @@
-## Interface: 120100
+## Interface: 120105
 ## Title: AltViewerLog |cffa040ff[Réputations]|r
 ## Notes: Affichage des réputations de tous les personnages pour AltViewerLog
 ## Author: SoLoup_ever

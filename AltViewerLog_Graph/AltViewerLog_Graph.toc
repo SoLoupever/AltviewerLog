@@ -1,4 +1,4 @@
-## Interface: 120100
+## Interface: 120105
 ## Title: AltViewerLog |cff4da6ffGraph|r
 ## Notes: Graphique du temps de jeu par classe pour AltViewerLog.
 ## Author: SoLoup_ever
