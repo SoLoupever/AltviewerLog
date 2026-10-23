@@ -63,37 +63,6 @@ function pluginNs.GetTierColor(name)
     return { r = 0.5, g = 0.7, b = 1.0 }
 end
 
-pluginNs.PROFESSION_BASE_IDS = {
-    ["Alchimie"]            = 171,
-    ["Alchemy"]             = 171,
-    ["Forge"]               = 164,
-    ["Blacksmithing"]       = 164,
-    ["Travail du cuir"]     = 165,
-    ["Leatherworking"]      = 165,
-    ["Couture"]             = 197,
-    ["Tailoring"]           = 197,
-    ["Ingenierie"]          = 202,
-    ["Engineering"]         = 202,
-    ["Enchantement"]        = 333,
-    ["Enchanting"]          = 333,
-    ["Joaillerie"]          = 755,
-    ["Jewelcrafting"]       = 755,
-    ["Calligraphie"]        = 773,
-    ["Inscription"]         = 773,
-    ["Herboristerie"]       = 182,
-    ["Herbalism"]           = 182,
-    ["Minage"]              = 186,
-    ["Mining"]              = 186,
-    ["Depecage"]            = 393,
-    ["Skinning"]            = 393,
-    ["Cuisine"]             = 185,
-    ["Cooking"]             = 185,
-    ["Peche"]               = 356,
-    ["Fishing"]             = 356,
-    ["Archeologie"]         = 794,
-    ["Archaeology"]         = 794,
-}
-
 -- ====================================================
 -- MAPPING NOM METIER → CLE RECIPE_DEFINITIONS
 -- Permet aux clients EN de trouver les recettes même

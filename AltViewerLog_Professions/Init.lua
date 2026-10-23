@@ -116,13 +116,27 @@ if core.RegisterSidebarButton then
 end
 
 -- ====================================================
+-- RAFRAÎCHISSEMENT : le scan (ViewerLog_Professions) notifie après chaque
+-- scan ; la vue Métiers se redessine si elle est affichée.
+-- ====================================================
+local vlAPI = _G.ViewerLogAPI
+if vlAPI and vlAPI.RegisterProfessionsCallback then
+    vlAPI.RegisterProfessionsCallback(function()
+        if pluginNs.isViewActive and core.mainFrame and core.mainFrame:IsShown() then
+            pluginNs.ShowProfessions()
+        end
+    end)
+end
+
+-- ====================================================
 -- SLASH COMMANDS
 -- ====================================================
 SLASH_AVLPROF1 = "/avlprof"
 SlashCmdList["AVLPROF"] = function(msg)
     msg = msg and strtrim(msg:lower()) or ""
     if msg == "scan" then
-        pluginNs.ScanAllProfessions()
+        local api = _G.ViewerLogAPI
+        if api and api.ScanAllProfessions then api.ScanAllProfessions() end
     elseif msg == "show" then
         pluginNs.isViewActive = true
         pluginNs.ShowProfessions()

@@ -75,7 +75,8 @@ SlashCmdList["ALTVIEWER"] = function(msg)
         if C_Bank then
             local getter = C_Bank.GetDepositedMoney or C_Bank.FetchDepositedMoney
             local live   = getter and getter(Enum.BankType.Account)
-            local saved  = ViewerLogDB and ViewerLogDB.warbandGold
+            local wbAPI  = _G.ViewerLogAPI
+            local saved  = wbAPI and wbAPI.GetWarbandGold and wbAPI.GetWarbandGold()
             ns.DBG(string.format(
                 "|cffff9900" .. ns.L("SLASH_DEBUG_GOLD_LINE"),
                 live ~= nil and ns.FormatMoney(live) or ("|cff808080" .. ns.L("SLASH_DEBUG_BANK_CLOSED") .. "|r"),

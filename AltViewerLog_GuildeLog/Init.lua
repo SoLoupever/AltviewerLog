@@ -163,9 +163,11 @@ function AVL_GuildeLog_OnCompartmentEnter(addonName, menuButton)
     end
     GameTooltip:AddLine(" ")
     GameTooltip:AddLine("|cff808080" .. pluginNs.L("AC_CLICK_HINT") .. "|r")
-    if ViewerLogDB.guilds then
+    local vlAPI  = _G.ViewerLogAPI
+    local guilds = vlAPI and vlAPI.GetAllGuilds and vlAPI.GetAllGuilds()
+    if guilds then
         local count = 0
-        for _, gData in pairs(ViewerLogDB.guilds) do
+        for _, gData in pairs(guilds) do
             if type(gData) == "table" and gData.guildName then
                 count = count + 1
                 local dateStr = gData.scanTime and gData.scanTime > 0

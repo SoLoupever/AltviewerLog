@@ -176,7 +176,8 @@ function ns.DumpGoldDebug()
     -- ── Banque de Bataillon ───────────────────────────────────────────
     print(ns.L("DBG_WARBAND_HEADER"))
 
-    local savedWB  = (ViewerLogDB and tonumber(ViewerLogDB.warbandGold)) or nil
+    local wbAPI    = _G.ViewerLogAPI
+    local savedWB  = wbAPI and wbAPI.GetWarbandGold and tonumber(wbAPI.GetWarbandGold()) or nil
     local liveWB   = nil
     local apiAvail = (C_Bank ~= nil and C_Bank.FetchDepositedMoney ~= nil)
 
@@ -210,7 +211,7 @@ function ns.DumpGoldDebug()
     do
         local valStr = savedWB ~= nil and CopperToStr(savedWB)
             or ns.L("DBG_NEVER_PERSISTED")
-        print("  |cffaaaaaa[DB]      |r ViewerLogDB.warbandGold      → " .. valStr)
+        print("  |cffaaaaaa[DB]      |r ViewerLogAPI.GetWarbandGold → " .. valStr)
     end
 
     -- Ligne fiabilité

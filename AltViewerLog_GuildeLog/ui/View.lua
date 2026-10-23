@@ -9,6 +9,12 @@ local addonName, pluginNs = ...
 
 local core = _G.AltViewerLogAPI   -- dépendance déclarée dans le .toc
 
+-- Guildes scannées (nil si aucune).
+local function GetGuilds()
+    local api = _G.ViewerLogAPI
+    return api and api.GetAllGuilds and api.GetAllGuilds()
+end
+
 -- ── Thème ────────────────────────────────────────────────────────
 -- Couleurs et skin viennent du core (ns.Theme / ns.Skin).
 local BLUE = { 0.30, 0.65, 1.00 }   -- titre de la vue (maquette)
@@ -121,10 +127,11 @@ function pluginNs.GetOrCreateSelectorFrame()
         wipe(selectorButtons)
         head:SetText(pluginNs.L("GUILDS_HEADING"):upper())
         head:SetTextColor(unpack(core.Theme.textDim))
-        if not ViewerLogDB.guilds then return end
+        local guilds = GetGuilds()
+        if not guilds then return end
 
         local offsetY = -28
-        for guildKey, gData in pairs(ViewerLogDB.guilds) do
+        for guildKey, gData in pairs(guilds) do
             if type(gData) == "table" and gData.guildName then
                 local btn = CreateFrame("Button", nil, inner, "BackdropTemplate")
                 btn:SetSize(SELECTOR_W - 24, 36)
@@ -332,7 +339,8 @@ DrawGuildView = function()
     rule:SetWidth(math.max(100, (core.GetContentWidth and core.GetContentWidth() or 660) - 40))
     rule:Show()
 
-    if not ViewerLogDB.guilds or not next(ViewerLogDB.guilds) then
+    local guilds = GetGuilds()
+    if not guilds or not next(guilds) then
         local nd = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontDisable")
         nd:SetPoint("TOP", 0, -100); nd:SetText(L("NO_DATA"))
         scrollChild:SetHeight(200)
@@ -340,12 +348,12 @@ DrawGuildView = function()
     end
 
     -- Choisir la guilde à afficher (par défaut : la première dispo ou la courante)
-    if not currentGuildKey or not ViewerLogDB.guilds[currentGuildKey] then
-        currentGuildKey = next(ViewerLogDB.guilds)
+    if not currentGuildKey or not guilds[currentGuildKey] then
+        currentGuildKey = next(guilds)
         currentTabIndex = 1
     end
 
-    local gData = ViewerLogDB.guilds[currentGuildKey]
+    local gData = guilds[currentGuildKey]
     if not gData then
         scrollChild:SetHeight(200); return
     end

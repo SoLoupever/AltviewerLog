@@ -527,6 +527,8 @@ end
 -- ====================================================
 function pluginNs.ShowProfessions()
     pluginNs.isViewActive = true   -- avant ClearContent pour protéger les popups
+    core.currentView       = pluginNs.ShowProfessions
+    core.currentViewIsBank = false
     pluginNs._refreshing  = true   -- indique au hook ClearContent qu'on se rafraîchit
     core.ClearContent()
     pluginNs._refreshing  = false  -- rafraîchissement terminé
@@ -581,7 +583,10 @@ function pluginNs.ShowProfessions()
     if not scanBtn.fs then
         scanBtn.fs = scanBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         scanBtn.fs:SetPoint("CENTER")
-        scanBtn:SetScript("OnClick", pluginNs.ScanAllProfessions)
+        scanBtn:SetScript("OnClick", function()
+            local api = _G.ViewerLogAPI
+            if api and api.ScanAllProfessions then api.ScanAllProfessions() end
+        end)
     end
     scanBtn.fs:SetText(core.L("SCAN_BTN"))
     scanBtn.fs:SetTextColor(unpack(T.gold))

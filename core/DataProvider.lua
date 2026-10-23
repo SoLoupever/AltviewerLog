@@ -141,12 +141,14 @@ end
 
 function ns.DP_GetWarbandBank()
     if not ns.DP_IsReady() then return nil end
-    return ViewerLogDB.warbandBank
+    local api = _G.ViewerLogAPI
+    return api.GetWarbandBank and api.GetWarbandBank()
 end
 
 function ns.DP_GetWarbandGold()
     if not ns.DP_IsReady() then return 0 end
-    return ViewerLogDB.warbandGold or 0
+    local api = _G.ViewerLogAPI
+    return api.GetWarbandGold and api.GetWarbandGold() or 0
 end
 
 -- ── Settings & catégories ─────────────────────────────────────────

@@ -15,16 +15,6 @@ pluginNs.locales["frFR"] = {
     DBG_HELP             = "|cffffff00/avlprof scan|r  |cffffff00/avlprof show|r",
 
     -- Scanner
-    DBG_PROF_REMOVED        = "Métier(s) retiré(s) : %s",
-    DBG_PROF_SAVED_BASIC    = "%s sauvegardé (basique) : %d/%d",
-    DBG_PROF_SCANNED        = "%s scanné : %s",
-    DBG_FULL_SCAN_DONE      = "Scan complet terminé.",
-    DBG_SCAN_IN_PROGRESS    = "Scan déjà en cours...",
-    DBG_NO_PROFESSION_FOUND = "Aucun métier trouvé.",
-    DBG_SCAN_START          = "Début du scan (%d métier(s))...",
-    DBG_FIRST_SCAN          = "Premier scan des métiers...",
-    DBG_PROGRESS_RESCAN     = "Progression détectée — rescan de %d métier(s)...",
-    DBG_PASSIVE_SCAN        = "Scan passif : %s",
     DBG_WARBAND_SCANNED     = "Banque de bataillon scannée.",
 
     -- Tooltips
