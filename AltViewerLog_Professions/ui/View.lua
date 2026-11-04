@@ -1,6 +1,6 @@
 local addonName, pluginNs = ...
 local core  = _G.AltViewerLogAPI
-local vlAPI = _G.ViewerLogAPI   -- accès en lecture à ViewerLogDB + IsRealm()
+local vlAPI = _G.ViewerLogAPI
 
 -- BVL compat : AltViewerLog n'expose pas GetContentWidth — fallback 660px
 local function GetContentWidth()
@@ -284,24 +284,19 @@ local professionFilterPopup = nil
 local function GetOrCreateProfessionFilterPopup()
     if professionFilterPopup then return professionFilterPopup end
 
-    -- Collecter une fois les métiers présents dans ViewerLogDB
+    -- Collecter une fois les métiers présents
     local seen, profNames = {}, {}
-    local vlDB = _G.ViewerLogDB
-    if vlDB and vlAPI then
-        for realmName, realmData in pairs(vlDB) do
-            if vlAPI.IsRealm(realmName, realmData) then
-                for _, charData in pairs(realmData) do
-                    if type(charData) == "table" and charData.professions then
-                        for _, p in ipairs(charData.professions) do
-                            if p.name and not seen[p.name] then
-                                seen[p.name] = true
-                                table.insert(profNames, p.name)
-                            end
-                        end
+    if vlAPI and vlAPI.IsReady() then
+        vlAPI.ForEachCharacter(function(_, _, charData)
+            if charData.professions then
+                for _, p in ipairs(charData.professions) do
+                    if p.name and not seen[p.name] then
+                        seen[p.name] = true
+                        table.insert(profNames, p.name)
                     end
                 end
             end
-        end
+        end)
     end
     table.sort(profNames)
     if #profNames == 0 then return nil end
@@ -539,14 +534,10 @@ function pluginNs.ShowProfessions()
     if pluginNs.ResetRecipeBarPools then pluginNs.ResetRecipeBarPools() end
 
     if not AltViewerLogDB then HideUnusedPools(); return end
-    local vlDB = _G.ViewerLogDB
-    if not vlDB then HideUnusedPools(); return end
+    if not vlAPI or not vlAPI.IsReady() then HideUnusedPools(); return end
 
-    -- Les données personnages (class, professions…) vivent dans ViewerLogDB,
-    -- pas dans AltViewerLogDB qui n'héberge que les préférences UI.
-    local playerClassData = core.realm and core.player
-        and vlDB[core.realm]
-        and vlDB[core.realm][core.player]
+        local playerClassData = core.realm and core.player
+        and vlAPI.GetCharacter(core.player, core.realm)
     local playerClassColor = (playerClassData and playerClassData.class and RAID_CLASS_COLORS[playerClassData.class])
         or { r = 1, g = 0.82, b = 0 }
 
@@ -818,17 +809,12 @@ function pluginNs.ShowProfessions()
     sep:Show()
 
     -- ── Collecte et tri des personnages ──────────────
-    -- Données dans ViewerLogDB ; clés réservées filtrées via vlAPI.IsRealm().
-    local charList = {}
-    for realmName, realmData in pairs(vlDB) do
-        if vlAPI and vlAPI.IsRealm(realmName, realmData) then
-            for charName, charData in pairs(realmData) do
-                if type(charData) == "table" and charData.class and charData.professions and #charData.professions > 0 then
-                    table.insert(charList, { realm=realmName, name=charName, data=charData })
-                end
-            end
+        local charList = {}
+    vlAPI.ForEachCharacter(function(charName, realmName, charData)
+        if charData.class and charData.professions and #charData.professions > 0 then
+            table.insert(charList, { realm=realmName, name=charName, data=charData })
         end
-    end
+    end)
     table.sort(charList, function(a, b)
         local aIsCurrent = (a.name==core.player and a.realm==core.realm)
         local bIsCurrent = (b.name==core.player and b.realm==core.realm)

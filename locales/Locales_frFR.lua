@@ -138,6 +138,9 @@ ns.locales["frFR"] = {
     BANK_WIN_TITLE    = "Banque — %s",
     BANK_NO_DATA      = "Aucune donnée de banque.\nVisite un banquier pour scanner.",
     CHAR_SWITCH_TT    = "Changer de personnage",
+    CHAR_SEL_SEARCH_PH = "Rechercher un perso...",
+    CHAR_SEL_ALL_REALMS = "Tous les serveurs",
+    CHAR_SEL_NO_RESULT = "Aucun personnage",
     -- Vue sacs par catégorie
     BAG_VIEW_TITLE    = "Inventaire de %s",
     CAT_ARMURE        = "Armure",

@@ -16,15 +16,6 @@ function ns.InitMinimap()
             tooltip:AddLine(" ")
             tooltip:AddLine("|cff808080" .. ns.L("MINIMAP_CLICK") .. "|r")
         end,
-        OnClick = function()
-            if not ns.mainFrame then return end
-            if ns.mainFrame:IsShown() then
-                ns.mainFrame:Hide()
-            else
-                ns.mainFrame:Show()
-                ns.RefreshCharacterList()
-                ns.Skin.SetActive(ns.btnChars)  -- OnShow a surligné l'ancienne vue
-            end
-        end,
+        OnClick = function() ns.ToggleMainFrame() end,
     }, AltViewerLogDB.minimap)
 end

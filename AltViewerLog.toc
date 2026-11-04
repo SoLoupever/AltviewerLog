@@ -42,6 +42,7 @@ fonctionnalite\RealmToggle.lua
 fonctionnalite\Characters.lua
 fonctionnalite\Bank.lua
 fonctionnalite\Search.lua
+fonctionnalite\CharSelector.lua
 fonctionnalite\Warband.lua
 fonctionnalite\Gear.lua
 fonctionnalite\Discord.lua

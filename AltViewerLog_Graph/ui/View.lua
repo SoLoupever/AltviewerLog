@@ -2,7 +2,7 @@ local addonName, pluginNs = ...
 
 -- ====================================================
 -- GRAPHIQUE (temps de jeu par classe)
--- Lit ViewerLogDB via _G.ViewerLogAPI et rend dans core.scrollChild.
+-- Lit les données via _G.ViewerLogAPI et rend dans core.scrollChild.
 -- Un seul frame racine, créé une fois puis réutilisé : ShowGraph()
 -- peut être rappelé à chaque redimensionnement.
 -- ====================================================
@@ -115,24 +115,21 @@ function pluginNs.ShowGraph()
     ui.sub:SetTextColor(unpack(T.textDim))
 
     local vlAPI = _G.ViewerLogAPI
-    local hasDB = vlAPI and _G.ViewerLogDB
     local realms, classTotals, charCount, total = {}, {}, 0, 0
-    if hasDB then
-        for realmName, realmData in pairs(ViewerLogDB) do
-            if vlAPI.IsRealm(realmName, realmData) then
+    if vlAPI and vlAPI.IsReady() then
+        local seenRealm = {}
+        vlAPI.ForEachCharacter(function(_, realmName, charData)
+            if not seenRealm[realmName] then
+                seenRealm[realmName] = true
                 realms[#realms + 1] = realmName
-                if not selectedRealm or selectedRealm == realmName then
-                    for _, charData in pairs(realmData) do
-                        if type(charData) == "table" and charData.class then
-                            local t = charData.timePlayed or 0
-                            classTotals[charData.class] = (classTotals[charData.class] or 0) + t
-                            total = total + t
-                            charCount = charCount + 1
-                        end
-                    end
-                end
             end
-        end
+            if charData.class and (not selectedRealm or selectedRealm == realmName) then
+                local t = charData.timePlayed or 0
+                classTotals[charData.class] = (classTotals[charData.class] or 0) + t
+                total = total + t
+                charCount = charCount + 1
+            end
+        end)
     end
     table.sort(realms)
     if selectedRealm and not tContains(realms, selectedRealm) then selectedRealm = nil end

@@ -10,7 +10,7 @@ local addonName, ns = ...
 -- Dépendances (fournies avant ce fichier) :
 --   ns.ClearContent, ns.AcquireButton, ns.GetIcon
 --   ns.GetContentWidth, ns.scrollChild
---   ns.OpenCharSelector, ns.charSelMenu
+--   ns.OpenCharSelector (CharSelector.lua)
 --   ns.liveDynBuckets, ns.liveDynBucketOrder (écrits ici, lus par ViewCategories)
 --   ns.ToggleCatOrderPanel (CategoryManager.lua)
 -- ====================================================

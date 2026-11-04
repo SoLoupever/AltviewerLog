@@ -84,9 +84,8 @@ function ns.DumpGoldDebug()
     print(SEP)
 
     -- ── Vérification DB ──────────────────────────────────────────────
-    local vlDB  = ViewerLogDB
     local vlAPI = _G.ViewerLogAPI
-    if not vlDB or not vlAPI then
+    if not vlAPI or not vlAPI.IsReady() then
         print(ns.L("DBG_DB_NOT_FOUND"))
         print(SEP)
         return
@@ -94,20 +93,14 @@ function ns.DumpGoldDebug()
 
     -- ── Collecte des personnages ──────────────────────────────────────
     local charList = {}
-    for realmName, realmData in pairs(vlDB) do
-        if vlAPI.IsRealm and vlAPI.IsRealm(realmName, realmData) then
-            for charName, charData in pairs(realmData) do
-                if type(charData) == "table" then
-                    table.insert(charList, {
-                        name  = charName,
-                        realm = realmName,
-                        class = charData.class,
-                        gold  = charData.gold,  -- nil = jamais scanné
-                    })
-                end
-            end
-        end
-    end
+    vlAPI.ForEachCharacter(function(charName, realmName, charData)
+        table.insert(charList, {
+            name  = charName,
+            realm = realmName,
+            class = charData.class,
+            gold  = charData.gold,  -- nil = jamais scanné
+        })
+    end)
 
     -- Tri : perso connecté en premier, puis or décroissant, puis nom.
     table.sort(charList, function(a, b)

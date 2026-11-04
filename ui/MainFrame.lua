@@ -98,15 +98,16 @@ resizeGrip:SetScript("OnMouseUp", function(_, btn)
 end)
 mainFrame.resizeGrip = resizeGrip
 
+-- ── Ouverture / fermeture (slash + minimap) ─────────────────────
+function ns.ToggleMainFrame()
+    if mainFrame:IsShown() then mainFrame:Hide() return end
+    mainFrame:Show()
+    ns.RefreshCharacterList()
+    ns.Skin.SetActive(ns.btnChars)
+end
+
 -- ── Barre du bas (conteneur ; les 3 boutons sont dans BottomBar.lua)
 ns.bottomBar = CreateFrame("Frame", "AVL_BottomBar", mainFrame)
 ns.bottomBar:SetHeight(LAYOUT.bottomH)
 ns.bottomBar:SetPoint("BOTTOMLEFT",  mainFrame, "BOTTOMLEFT",  0, 0)
 ns.bottomBar:SetPoint("BOTTOMRIGHT", mainFrame, "BOTTOMRIGHT", 0, 0)
-
--- Auto-fermeture du charSelMenu (parenté UIParent) quand l'addon se ferme
-mainFrame:HookScript("OnHide", function()
-    if ns.charSelMenu and ns.charSelMenu:IsShown() then
-        ns.charSelMenu:Hide()
-    end
-end)

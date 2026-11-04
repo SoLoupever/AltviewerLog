@@ -136,6 +136,9 @@ ns.locales["enUS"] = {
     BANK_WIN_TITLE    = "Bank — %s",
     BANK_NO_DATA      = "No bank data.\nVisit a banker to scan.",
     CHAR_SWITCH_TT    = "Switch character",
+    CHAR_SEL_SEARCH_PH = "Search a character...",
+    CHAR_SEL_ALL_REALMS = "All realms",
+    CHAR_SEL_NO_RESULT = "No character found",
     -- Bag view by category
     BAG_VIEW_TITLE    = "Inventory of %s",
     CAT_ARMURE        = "Armor",

@@ -74,7 +74,6 @@ if core.RegisterSidebarButton then
 
         if core.mainFrame then
             core.mainFrame:HookScript("OnHide", function()
-                if pluginNs.CloseActiveDropdown then pluginNs.CloseActiveDropdown() end
                 if pluginNs.CloseExpansionFilterPopup then pluginNs.CloseExpansionFilterPopup() end
                 if pluginNs.CloseProfessionFilterPopup then pluginNs.CloseProfessionFilterPopup() end
             end)
@@ -90,7 +89,6 @@ if core.RegisterSidebarButton then
         local _prevModuleClose = core.CloseModulePopups
         core.CloseModulePopups = function()
             if _prevModuleClose then _prevModuleClose() end
-            if pluginNs.CloseActiveDropdown        then pluginNs.CloseActiveDropdown() end
             if pluginNs.CloseExpansionFilterPopup  then pluginNs.CloseExpansionFilterPopup() end
             if pluginNs.CloseProfessionFilterPopup then pluginNs.CloseProfessionFilterPopup() end
         end

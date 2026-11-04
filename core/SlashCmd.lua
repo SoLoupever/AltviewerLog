@@ -26,36 +26,30 @@ SlashCmdList["ALTVIEWER"] = function(msg)
     -- /av meta : dump restedXP + guild de tous les persos en DB
     if msg == "meta" then
         local vlAPI = _G.ViewerLogAPI
-        if not vlAPI or not ViewerLogDB then
+        if not vlAPI or not vlAPI.IsReady() then
             print("|cffff4444" .. ns.L("SLASH_VLDB_MISSING") .. "|r")
             return
         end
         print("|cff00ccff" .. ns.L("SLASH_META_HEADER") .. "|r")
-        for realmName, realmData in pairs(ViewerLogDB) do
-            if vlAPI.IsRealm(realmName, realmData) then
-                for charName, data in pairs(realmData) do
-                    if type(data) == "table" then
-                        local restedStr = "nil"
-                        local r = data.rested
-                        if r and type(r) == "table" then
-                            local pct = vlAPI.GetRestedPercent and vlAPI.GetRestedPercent(charName, realmName)
-                            local ago = r.updatedAt and (time() - r.updatedAt) or nil
-                            restedStr = string.format("raw=%d maxXP=%d resting=%s pct=%s ago=%ss",
-                                r.currentRestedXP or 0,
-                                r.maxXP or 0,
-                                tostring(r.isRestingArea),
-                                tostring(pct),
-                                tostring(ago))
-                        end
-                        print(string.format(
-                            "  |cffffd700%s|r @ %s  guild=|cff88ff88%s|r  rested={%s}",
-                            charName, realmName,
-                            tostring(data.guild),
-                            restedStr))
-                    end
-                end
+        vlAPI.ForEachCharacter(function(charName, realmName, data)
+            local restedStr = "nil"
+            local r = data.rested
+            if type(r) == "table" then
+                local pct = vlAPI.GetEstimatedRestedPct and vlAPI.GetEstimatedRestedPct(charName, realmName)
+                local ago = r.updatedAt and (time() - r.updatedAt) or nil
+                restedStr = string.format("raw=%d maxXP=%d resting=%s pct=%s ago=%ss",
+                    r.currentRestedXP or 0,
+                    r.maxXP or 0,
+                    tostring(r.isRestingArea),
+                    tostring(pct),
+                    tostring(ago))
             end
-        end
+            print(string.format(
+                "  |cffffd700%s|r @ %s  guild=|cff88ff88%s|r  rested={%s}",
+                charName, realmName,
+                tostring(data.guild),
+                restedStr))
+        end)
         return
     end
 
@@ -86,7 +80,5 @@ SlashCmdList["ALTVIEWER"] = function(msg)
         return
     end
 
-    if ns.mainFrame then
-        ns.mainFrame:SetShown(not ns.mainFrame:IsShown())
-    end
+    ns.ToggleMainFrame()
 end

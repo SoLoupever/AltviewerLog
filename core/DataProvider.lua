@@ -25,7 +25,7 @@ local REQUIRED_VL_API_VERSION = 1
 -- version d'API compatible avec celle attendue par AltViewerLog.
 function ns.DP_IsReady()
     local vlAPI = _G.ViewerLogAPI
-    if not vlAPI or not _G.ViewerLogDB then return false end
+    if not vlAPI or not vlAPI.IsReady() then return false end
     local vlVersion = vlAPI.API_VERSION
     if type(vlVersion) ~= "number" or vlVersion < REQUIRED_VL_API_VERSION then
         return false
@@ -39,7 +39,7 @@ end
 -- demandent des actions différentes de l'utilisateur.
 function ns.DP_GetUnreadyReason()
     local vlAPI = _G.ViewerLogAPI
-    if not vlAPI or not _G.ViewerLogDB then
+    if not vlAPI or not vlAPI.IsReady() then
         return "MISSING"
     end
     local vlVersion = vlAPI.API_VERSION
@@ -71,40 +71,30 @@ function ns.DP_GetAllChars()
     if not ns.DP_IsReady() then return {} end
 
     local result = {}
-    for realmName, realmData in pairs(ViewerLogDB) do
-        if ViewerLogAPI.IsRealm(realmName, realmData) then
-            for charName, charData in pairs(realmData) do
-                if type(charData) == "table" and IsValidCharEntry(charData) then
-                    result[#result + 1] = {
-                        realm = realmName,
-                        char  = charName,
-                        data  = charData,
-                    }
-                end
-            end
-        end
-    end
+    ns.DP_IterateChars(function(realmName, charName, charData)
+        result[#result + 1] = {
+            realm = realmName,
+            char  = charName,
+            data  = charData,
+        }
+    end)
     return result
 end
 
 -- Retourne les données d'un personnage spécifique.
 function ns.DP_GetCharData(realmName, charName)
     if not ns.DP_IsReady() then return nil end
-    return ViewerLogDB[realmName] and ViewerLogDB[realmName][charName]
+    return ViewerLogAPI.GetCharacter(charName, realmName)
 end
 
 -- Itère tous les personnages via un callback cb(realm, char, data).
 function ns.DP_IterateChars(cb)
     if not ns.DP_IsReady() then return end
-    for realmName, realmData in pairs(ViewerLogDB) do
-        if ViewerLogAPI.IsRealm(realmName, realmData) then
-            for charName, charData in pairs(realmData) do
-                if type(charData) == "table" and IsValidCharEntry(charData) then
-                    cb(realmName, charName, charData)
-                end
-            end
+    ViewerLogAPI.ForEachCharacter(function(charName, realmName, charData)
+        if IsValidCharEntry(charData) then
+            cb(realmName, charName, charData)
         end
-    end
+    end)
 end
 
 -- ── XP de repos ──────────────────────────────────────────────────
@@ -129,12 +119,8 @@ function ns.DP_GetRestedPct(charName, realmName, data)
     end
 
     local vlAPI = _G.ViewerLogAPI
-    if vlAPI.GetEstimatedRestedPct then
-        return vlAPI.GetEstimatedRestedPct(charName, realmName)
-    elseif data and data.rested and vlAPI.EstimateRestedPct then
-        return vlAPI.EstimateRestedPct(data.rested, data.maxXP)
-    end
-    return nil
+    return vlAPI.GetEstimatedRestedPct
+        and vlAPI.GetEstimatedRestedPct(charName, realmName)
 end
 
 -- ── Banque de bataillon ───────────────────────────────────────────

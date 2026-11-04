@@ -16,8 +16,6 @@ data\Constants.lua
 
 ## ── INTERFACE ────────────────────────────────────────────────────
 ui\Bar.lua
-ui\Dropdown.lua
-ui\Popup.lua
 ui\BlizzProfPanel.lua
 ui\Settings.lua
 ui\RecipeGrid.lua
