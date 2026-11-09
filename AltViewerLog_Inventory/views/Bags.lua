@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local core = ns.core
 
 -- ====================================================
 -- VUE SACS — ns.ShowBags
@@ -22,8 +23,8 @@ ns.bagViewRealm     = nil
 
 function ns.ShowBags(data, charName, realmName)
     if not ns.scrollChild then return end
-    ns.currentView = function() ns.ShowBags(data, charName, realmName) end
-    ns.currentViewIsBank = false
+    core.currentView = function() ns.ShowBags(data, charName, realmName) end
+    core.currentViewIsBank = false
     ns.ClearContent()
 
     ns.bagViewData  = data

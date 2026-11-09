@@ -5,16 +5,15 @@ local addonName, ns = ...
 --
 -- Ce fichier ne fait QUE gérer l'état ouvert/fermé et
 -- persister l'or dans AltViewerLogDB.warbandGold.
--- La LECTURE pour l'affichage est faite par BottomBar
+-- La LECTURE pour l'affichage est faite par ui/BottomBar
 -- via sa fonction locale ReadWarbandGold() qui appelle
--- directement C_Bank.FetchDepositedMoney — comme
--- en appelant directement C_Bank.FetchDepositedMoney.
+-- directement C_Bank.FetchDepositedMoney.
 --
 -- API publique :
 --   ns.IsWarbandBankOpen()        → bool
 --   ns.WarbandOpenedThisSession() → bool
---   ns.OnWarbandBankOpened()      → appelé par Events.lua
---   ns.OnWarbandBankClosed()      → appelé par Events.lua
+--   ns.OnWarbandBankOpened()      → déclenché par l'événement ci-dessous
+--   ns.OnWarbandBankClosed()      → idem
 --   ns.GetWarbandGold()           → (live, isCached)
 -- ====================================================
 
@@ -77,3 +76,15 @@ function ns.GetWarbandGold()
     return live, not _openedThisSession
 end
 
+-- ── Ouverture / fermeture de la banque de bataillon ──────────────
+local ev = CreateFrame("Frame")
+ev:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_SHOW")
+ev:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_HIDE")
+ev:SetScript("OnEvent", function(_, event, interactionType)
+    if interactionType ~= Enum.PlayerInteractionType.AccountBank then return end
+    if event == "PLAYER_INTERACTION_MANAGER_FRAME_SHOW" then
+        ns.OnWarbandBankOpened()
+    else
+        ns.OnWarbandBankClosed()
+    end
+end)

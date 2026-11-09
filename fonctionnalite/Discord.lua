@@ -79,7 +79,7 @@ end
 -- un autre module) : la popup Discord se ferme comme les autres
 -- popups flottantes (menu de sélection de perso, dropdown de
 -- recherche…) dès qu'un autre bouton sidebar est cliqué. Même patron
--- que ns.btnConfig/ns.btnSearch dans ui/Sidebar.lua.
+-- que les autres popups de ui/Sidebar.lua.
 local _prevModuleClose = ns.CloseModulePopups
 ns.CloseModulePopups = function()
     if _prevModuleClose then _prevModuleClose() end

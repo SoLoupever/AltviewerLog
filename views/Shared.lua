@@ -2,13 +2,11 @@ local addonName, ns = ...
 
 -- ====================================================
 -- VIEWS — Utilitaires partagés par toutes les vues
--- Rôle UNIQUE : fournir les helpers, pools de frames,
--- et la catégorisation Blizzard.
+-- Rôle UNIQUE : helpers partagés (ClearContent, icônes, temps)
+-- et catégorisation Blizzard.
 --
--- Ce qui vivait ici et a été extrait :
---   ShowBags()        → ViewBags.lua
---   DrawBagsByCategory → Categories.lua ; panneau → CategoryManager.lua
---   ShowSettings()    → Settings.lua
+-- Pool de boutons, sélection, filtres de recherche et vues
+-- (sacs, banque…) : dépendance AltViewerLog_Inventory.
 -- ====================================================
 
 local select              = select
@@ -90,12 +88,6 @@ local function IsRealm(k, v)
 end
 ns.IsRealm = IsRealm
 
--- ── Sélection / déselection ──────────────────────────────────────
-local AVL_selected = nil
-local function AVL_Deselect() AVL_selected = nil; ns.AVL_selected = nil end
-ns.AVL_GetSelected = function() return AVL_selected end
-ns.AVL_Deselect    = AVL_Deselect
-
 -- ── Formatage du temps ────────────────────────────────────────────
 function ns.FormatTime(totalSeconds)
     if not totalSeconds or totalSeconds <= 0 then return "0m" end
@@ -112,10 +104,7 @@ function ns.FormatTime(totalSeconds)
     end
 end
 
--- ── Pool de frames ────────────────────────────────────────────────
-local btnPool      = {}
-local activeFrames = {}
-
+-- ── Icônes (cache) ────────────────────────────────────────────────
 local _GetItemIcon = (C_Item and C_Item.GetItemIconByID) or GetItemIcon
 local iconCache = {}
 local function GetIcon(id)
@@ -124,40 +113,18 @@ local function GetIcon(id)
 end
 ns.GetIcon = GetIcon
 
-local function AcquireButton(parent)
-    local f = table.remove(btnPool)
-    if f then
-        f:SetParent(parent); f:ClearAllPoints()
-    else
-        f = CreateFrame("Button", nil, parent)
-        f.ico = f:CreateTexture(nil, "BACKGROUND"); f.ico:SetAllPoints()
-        f.countText = f:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
-        f.countText:SetPoint("BOTTOMRIGHT", -2, 2)
-    end
-    f:Show()
-    table.insert(activeFrames, { f=f, pool=btnPool })
-    return f
-end
-ns.AcquireButton = AcquireButton
-
-local function ReleaseActiveFrames()
-    for _, entry in ipairs(activeFrames) do
-        local f = entry.f
-        f:Hide()
-        f:SetScript("OnClick",  nil)
-        f:SetScript("OnEnter",  nil)
-        f:SetScript("OnLeave",  nil)
-        if ns.CatDnD then ns.CatDnD.Detach(f) end
-        table.insert(entry.pool, f)
-    end
-    activeFrames = {}
-end
-
 -- ── ClearContent ──────────────────────────────────────────────────
+-- Les dépendances enregistrent leur nettoyage (pools, sélection…)
+-- via ns.RegisterContentCleaner ; appelés avant le masquage.
+local cleaners = {}
+
+function ns.RegisterContentCleaner(fn)
+    if type(fn) == "function" then cleaners[#cleaners + 1] = fn end
+end
+
 function ns.ClearContent()
     if not ns.scrollChild then return end
-    AVL_Deselect()
-    ReleaseActiveFrames()
+    for _, fn in ipairs(cleaners) do fn() end
     if ns.CatDnD then ns.CatDnD.ReleaseFor(ns.scrollChild) end
 
     local regions = { ns.scrollChild:GetRegions() }
@@ -168,25 +135,3 @@ function ns.ClearContent()
 
     ns.scrollChild:SetHeight(1)
 end
-
--- ── Catégories de filtre (initialisées au PLAYER_LOGIN) ──────────
-ns.FILTER_CATS  = {}
-ns.activeFilterCat = nil
-
-local function AVL_InitFilterCats()
-    ns.FILTER_CATS = {
-        { key="ALL",           label=ns.L("FILTER_ALL"),         classID=nil, subClassID=nil, invType=nil },
-        { key="CONSOMABLE",    label=ns.L("FILTER_CONSUMABLE"),  classID=0,   subClassID=nil, invType=nil },
-        { key="ARME",          label=ns.L("FILTER_WEAPON"),      classID=2,   subClassID=nil, invType=nil },
-        { key="ARMURE",        label=ns.L("FILTER_ARMOR"),       classID=4,   subClassID=nil, invType=nil },
-        { key="ARMURE_TISSU",  label=ns.L("FILTER_CLOTH"),       classID=4,   subClassID=1,   invType=nil },
-        { key="ARMURE_CUIR",   label=ns.L("FILTER_LEATHER"),     classID=4,   subClassID=2,   invType=nil },
-        { key="ARMURE_MAILLE", label=ns.L("FILTER_MAIL"),        classID=4,   subClassID=3,   invType=nil },
-        { key="ARMURE_PLAQUE", label=ns.L("FILTER_PLATE"),       classID=4,   subClassID=4,   invType=nil },
-        { key="TETE",          label=ns.L("FILTER_HEAD"),        classID=nil, subClassID=nil, invType="INVTYPE_HEAD" },
-        { key="DOS",           label=ns.L("FILTER_CLOAK"),       classID=nil, subClassID=nil, invType="INVTYPE_CLOAK" },
-        { key="QUETE",         label=ns.L("FILTER_QUEST"),       classID=12,  subClassID=nil, invType=nil },
-        { key="REACTIF",       label=ns.L("FILTER_REAGENT"),     classID=5,   subClassID=nil, invType=nil },
-    }
-end
-ns.AVL_InitFilterCats = AVL_InitFilterCats

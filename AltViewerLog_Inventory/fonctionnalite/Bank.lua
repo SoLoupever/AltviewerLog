@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local core = ns.core
 
 -- ====================================================
 -- VUE BANQUE PERSONNELLE
@@ -69,16 +70,16 @@ function ns.ShowBank(charName, realmName)
     local target
     if inline then
         if not ns.scrollChild then return end
-        ns.currentView       = function() ns.ShowBank(charName, realmName) end
-        ns.currentViewIsBank = false
+        core.currentView       = function() ns.ShowBank(charName, realmName) end
+        core.currentViewIsBank = false
         ReleaseBankItemButtons()
         ns.ClearContent()
         if ns.AVL_Deselect then ns.AVL_Deselect() end
         target = ns.scrollChild
     else
         if not ns.bankWin then return end
-        ns.currentView       = function() ns.ShowBank(charName, realmName) end
-        ns.currentViewIsBank = true
+        core.currentView       = function() ns.ShowBank(charName, realmName) end
+        core.currentViewIsBank = true
         ns.ClearBankContent()
         target = ns.bankScrollChild
     end
@@ -410,3 +411,8 @@ function ns.ShowBank(charName, realmName)
     target:SetHeight(math.abs(baseY) + 50)
     if not inline then ns.bankWin:Show() end
 end
+
+-- ── Enregistrement sidebar ────────────────────────────────────────
+ns.AddSidebarButton(12, "BTN_BANK", function()
+    ns.ShowBank(ns.bankViewChar or UnitName("player"), ns.bankViewRealm or GetRealmName())
+end)

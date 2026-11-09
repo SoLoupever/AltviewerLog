@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local core = ns.core
 
 -- ====================================================
 -- BANQUE BATAILLON (Warband Bank)
@@ -10,8 +11,8 @@ local addonName, ns = ...
 -- ====================================================
 
 function ns.ShowWarbandBank()
-    ns.currentView       = ns.ShowWarbandBank
-    ns.currentViewIsBank = false
+    core.currentView       = ns.ShowWarbandBank
+    core.currentViewIsBank = false
     ns.ClearContent()
 
     if not ns.DP_IsReady() then
@@ -230,3 +231,19 @@ function ns.ShowWarbandBank()
 
     ns.scrollChild:SetHeight(math.abs(baseY) + 50)
 end
+
+-- ── Enregistrement sidebar + rafraîchissement à la fermeture ─────
+ns.AddSidebarButton(13, "BTN_WARBAND", function()
+    ns.activeFilterCat = nil
+    ns.ShowWarbandBank()
+end, ns.ShowWarbandBank)
+
+local ev = CreateFrame("Frame")
+ev:RegisterEvent("PLAYER_INTERACTION_MANAGER_FRAME_HIDE")
+ev:SetScript("OnEvent", function(_, _, interactionType)
+    if interactionType == Enum.PlayerInteractionType.AccountBank
+    and core.mainFrame and core.mainFrame:IsShown()
+    and core.currentView == ns.ShowWarbandBank then
+        ns.ShowWarbandBank()
+    end
+end)

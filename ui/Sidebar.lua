@@ -28,143 +28,99 @@ end
 local function CC(text) return "|cff"..GetClassHex()..text.."|r" end
 ns.CC = CC
 
--- ── Factory bouton ────────────────────────────────────────────────
+-- ── Factory bouton ───────────────────────────────────────────────
 ns.sideButtons = {}
 
-local BTN_W, BTN_H, BTN_GAP = LAYOUT.sideW - 24, 34, 8
+local BTN_W, BTN_H, BTN_GAP, TOP_OFF = LAYOUT.sideW - 24, 34, 8, 12
 
-local function CreateMenuButton(label, anchorFrame, offsetY)
+-- Bouton natif (Discord, Paramètres) : ancré par RelayoutButtons.
+local function CreateMenuButton()
     local btn = CreateFrame("Button", nil, sideBar, "BackdropTemplate")
     btn:SetSize(BTN_W, BTN_H)
-    btn:SetPoint("TOP", anchorFrame, "BOTTOM", 0, offsetY)
     ns.Skin.SideButton(btn)
-    btn:SetText(label)
     ns.sideButtons[#ns.sideButtons + 1] = btn
     return btn
 end
 
--- ── Fermeture de toutes les popups flottantes ─────────────────────
--- Définie AVANT tout SetScript qui l'utilise.
--- En Lua une closure ne peut capturer une local que si elle est déclarée
--- avant la closure — sinon Lua cherche un global introuvable (nil).
+-- ── Fermeture de toutes les popups flottantes ────────────────────
+-- Définie AVANT tout SetScript qui l'utilise (closure sur une local).
+-- Les dépendances chaînent ns.CloseModulePopups pour ajouter les leurs.
 local function CloseAllPopups()
     if ns.charSelMenu and ns.charSelMenu:IsShown() then
         ns.charSelMenu:Hide()
-    end
-    -- Fermer le dropdown de filtre de recherche s'il est ouvert
-    if ns._searchDropdown and ns._searchDropdown:IsShown() then
-        ns._searchDropdown:Hide()
-    end
-    if ns._searchCloseW and ns._searchCloseW:IsShown() then
-        ns._searchCloseW:Hide()
     end
     if ns.CloseModulePopups then ns.CloseModulePopups() end
 end
 ns.CloseAllPopups = CloseAllPopups  -- exposé pour les sous-modules
 
--- ── Boutons dans l'ordre ──────────────────────────────────────────
--- Premier bouton ancré sur la sidebar elle-même
-ns.btnSearch = CreateFrame("Button", nil, sideBar, "BackdropTemplate")
-ns.btnSearch:SetSize(BTN_W, BTN_H)
-ns.btnSearch:SetPoint("TOP", sideBar, "TOP", 0, -12)
-ns.Skin.SideButton(ns.btnSearch)
-ns.btnSearch:SetScript("OnClick", function() CloseAllPopups(); ns.ShowSearch() end)
-ns.sideButtons[#ns.sideButtons + 1] = ns.btnSearch
-
-local btnChars   = CreateMenuButton("...", ns.btnSearch, -BTN_GAP)
-local btnBank    = CreateMenuButton("...", btnChars,     -BTN_GAP)
-local btnWarband = CreateMenuButton("...", btnBank,      -BTN_GAP)
-ns.btnGear       = CreateMenuButton("...", btnWarband,   -BTN_GAP)
-
-ns.btnChars   = btnChars
-ns.btnWarband = btnWarband
-ns.btnBank    = btnBank
-
-btnChars:SetScript("OnClick",   function() CloseAllPopups(); ns.activeFilterCat = nil; ns.RefreshCharacterList() end)
-btnBank:SetScript("OnClick",    function() CloseAllPopups(); ns.ShowBank(ns.bankViewChar or UnitName("player"), ns.bankViewRealm or GetRealmName()) end)
-btnWarband:SetScript("OnClick", function() CloseAllPopups(); ns.activeFilterCat = nil; ns.ShowWarbandBank() end)
-ns.btnGear:SetScript("OnClick", function() CloseAllPopups(); ns.ShowGear() end)
-
--- Point d'ancrage pour les dépendances (Graph, Professions, GuildeLog…).
--- Le bouton Graphique est désormais fourni par la dépendance
--- AltViewerLog_Graph (priorité 50), plus par le core.
-ns.btnLastBeforeConfig = ns.btnGear
-
--- Discord (toujours juste au-dessus de Paramètres, après les plugins
--- éventuels). Fait partie de la chaîne d'ancrage native : réancré
--- par RelayoutPluginButtons ci-dessous à chaque enregistrement de
--- plugin, pour rester juste avant Paramètres quoi qu'il arrive.
--- Appel du module fonctionnalite/Discord.lua de façon contrôlée
+-- ── Boutons natifs : Discord, puis Paramètres (toujours en dernier) ──
+-- Discord : appel du module fonctionnalite/Discord.lua de façon contrôlée
 -- (aucune dépendance directe : simple vérification d'existence).
-ns.btnDiscord = CreateMenuButton("...", ns.btnLastBeforeConfig, -BTN_GAP)
+ns.btnDiscord = CreateMenuButton()
 ns.btnDiscord:SetScript("OnClick", function()
     CloseAllPopups()
     if ns.ShowDiscordDialog then ns.ShowDiscordDialog() end
 end)
 
-ns.btnConfig = CreateMenuButton("...", ns.btnDiscord, -BTN_GAP)
+ns.btnConfig = CreateMenuButton()
 ns.btnConfig:SetScript("OnClick", function() CloseAllPopups(); ns.ShowSettings() end)
 
--- Bouton actif : toutes les vues natives (Discord ouvre juste un dialogue)
-for _, b in ipairs({ ns.btnSearch, btnChars, btnBank, btnWarband, ns.btnGear, ns.btnConfig }) do
-    b:HookScript("OnClick", function(self) ns.Skin.SetActive(self) end)
-end
+-- Bouton actif : Paramètres (Discord ouvre juste un dialogue)
+ns.btnConfig:HookScript("OnClick", function(self) ns.Skin.SetActive(self) end)
 
 -- ====================================================
--- ENREGISTREMENT DE BOUTONS SIDEBAR PAR LES PLUGINS
+-- ENREGISTREMENT DE BOUTONS SIDEBAR PAR LES DÉPENDANCES
 -- ====================================================
--- Remplace l'ancien système où chaque plugin (Professions,
--- GuildeLog, Réputations…) s'insérait via un C_Timer.After à
--- délai codé en dur (0.6s / 0.9s / 1.2s…) pour deviner l'ordre
--- d'exécution des autres plugins. Ce système était fragile :
--- l'ordre réel ne dépendait que de constantes recopiées à la
--- main dans plusieurs addons différents, sans aucune relation
--- déclarée entre eux, et toute désynchronisation échouait en
--- silence.
---
--- Désormais chaque plugin appelle ns.RegisterSidebarButton(...)
--- de façon SYNCHRONE, directement dans son propre Init.lua (pas
--- besoin de timer : à ce stade AltViewerLog est déjà entièrement
--- chargé, puisque c'est une dépendance déclarée dans le .toc du
--- plugin — le loader WoW garantit cet ordre). Le tri par priorité
--- explicite remplace l'ordre implicite basé sur le timing.
+-- Chaque dépendance (Inventaire, Graphique, Métiers…) appelle
+-- ns.RegisterSidebarButton(...) de façon SYNCHRONE depuis son propre
+-- fichier : AltViewerLog est déclaré dans son .toc, le loader WoW
+-- garantit donc qu'il est déjà entièrement chargé. L'ordre vient de
+-- la priorité explicite, jamais du timing.
 --
 -- Usage :
 --   core.RegisterSidebarButton(100, function(parent)
 --       local btn = CreateFrame("Button", nil, parent, "BackdropTemplate")
---       -- ... style, taille, texte, OnClick ...
 --       return btn  -- ne PAS l'ancrer : c'est géré ici
---   end)
+--   end, MaFonctionDeVue)  -- vue optionnelle : surlignage à l'ouverture
 --
--- Priorités utilisées par les plugins officiels (laisser de la
--- marge pour en insérer d'autres) :
---   100 = Professions, 200 = Réputations, 300 = Guilde
+-- Priorités :
+--   10-14 = Inventaire, 50 = Graphique, 100 = Métiers,
+--   200 = Réputations, 300 = Guilde
 -- ====================================================
 
 local _pluginButtons = {} -- { {priority=, btn=}, ... }
+local _viewButtons   = {} -- [fonction de vue] = bouton
 
-local function RelayoutPluginButtons()
+local function RelayoutButtons()
     table.sort(_pluginButtons, function(a, b) return a.priority < b.priority end)
-    local anchor = ns.btnGear
+    local anchor
     for _, entry in ipairs(_pluginButtons) do
         entry.btn:ClearAllPoints()
-        entry.btn:SetPoint("TOP", anchor, "BOTTOM", 0, -BTN_GAP)
+        if anchor then
+            entry.btn:SetPoint("TOP", anchor, "BOTTOM", 0, -BTN_GAP)
+        else
+            entry.btn:SetPoint("TOP", sideBar, "TOP", 0, -TOP_OFF)
+        end
         anchor = entry.btn
     end
-    ns.btnLastBeforeConfig = anchor
 
     ns.btnDiscord:ClearAllPoints()
-    ns.btnDiscord:SetPoint("TOP", anchor, "BOTTOM", 0, -BTN_GAP)
+    if anchor then
+        ns.btnDiscord:SetPoint("TOP", anchor, "BOTTOM", 0, -BTN_GAP)
+    else
+        ns.btnDiscord:SetPoint("TOP", sideBar, "TOP", 0, -TOP_OFF)
+    end
 
     ns.btnConfig:ClearAllPoints()
     ns.btnConfig:SetPoint("TOP", ns.btnDiscord, "BOTTOM", 0, -BTN_GAP)
 end
+RelayoutButtons()
 
--- Crée (via factory) et positionne un bouton de plugin dans la
--- sidebar, à l'emplacement déterminé par `priority` (plus petit
--- = plus haut, juste sous les boutons natifs de AltViewerLog).
--- Retourne le bouton créé, ou nil si les paramètres sont invalides.
-function ns.RegisterSidebarButton(priority, factory)
+-- Crée (via factory) et positionne un bouton de dépendance, à
+-- l'emplacement déterminé par `priority` (plus petit = plus haut).
+-- `view` (optionnel) : fonction de vue affichée par le bouton, pour le
+-- surlignage à l'ouverture. Retourne le bouton, ou nil si invalide.
+function ns.RegisterSidebarButton(priority, factory, view)
     if type(priority) ~= "number" or type(factory) ~= "function" then
         return nil
     end
@@ -189,45 +145,41 @@ function ns.RegisterSidebarButton(priority, factory)
     if existing then btn:SetScript("OnClick", existing) end
 
     ns.sideButtons[#ns.sideButtons + 1] = btn
+    if type(view) == "function" then _viewButtons[view] = btn end
 
     _pluginButtons[#_pluginButtons + 1] = { priority = priority, btn = btn }
-    RelayoutPluginButtons()
+    RelayoutButtons()
     return btn
 end
 
--- ── Mise à jour textes (couleur de classe, localisation) ──────────
+-- Vue affichée à l'ouverture de la fenêtre (fournie par une dépendance).
+-- Sans vue d'accueil, l'ouverture tombe sur Paramètres.
+function ns.SetHomeView(fn)
+    if type(fn) == "function" then ns.homeView = fn end
+end
+
+-- Surligne le bouton de la vue courante (ou de la vue d'accueil).
+function ns.HighlightCurrentView()
+    local v = ns.currentView or ns.homeView or ns.ShowSettings
+    local btn = (v == ns.ShowSettings) and ns.btnConfig or _viewButtons[v]
+    if btn then ns.Skin.SetActive(btn) end
+end
+
+-- ── Mise à jour textes (couleur de classe, localisation) ─────────
 local function RefreshMenuText()
-    ns.btnSearch:SetText(ns.L("BTN_SEARCH"))
-    btnChars:SetText(ns.L("BTN_CHARS"))
-    btnBank:SetText(ns.L("BTN_BANK"))
-    btnWarband:SetText(ns.L("BTN_WARBAND"))
-    ns.btnGear:SetText(ns.L("BTN_GEAR"))
     ns.btnConfig:SetText(ns.L("BTN_SETTINGS"))
     ns.btnDiscord:SetText(ns.L("BTN_DISCORD"))
 end
 ns.RefreshMenuText = RefreshMenuText
 
--- À l'ouverture : surligne le bouton de la vue native courante
--- (une vue de plugin garde son surlignage posé au clic).
-ns.mainFrame:HookScript("OnShow", function()
-    local v = ns.currentView
-    local map = {
-        [ns.RefreshCharacterList or 0] = btnChars,
-        [ns.ShowSearch or 0]           = ns.btnSearch,
-        [ns.ShowGear or 0]             = ns.btnGear,
-        [ns.ShowWarbandBank or 0]      = btnWarband,
-        [ns.ShowSettings or 0]         = ns.btnConfig,
-    }
-    if not v then ns.Skin.SetActive(btnChars)
-    elseif map[v] then ns.Skin.SetActive(map[v]) end
-end)
+-- À l'ouverture : une vue de dépendance garde son surlignage posé au clic.
+ns.mainFrame:HookScript("OnShow", ns.HighlightCurrentView)
 
 -- Applique les textes au login (couleurs de classe disponibles)
 local _loginFrame = CreateFrame("Frame")
 _loginFrame:RegisterEvent("PLAYER_LOGIN")
 _loginFrame:SetScript("OnEvent", function(self)
     self:UnregisterEvent("PLAYER_LOGIN")
-    if ns.AVL_InitFilterCats then ns.AVL_InitFilterCats() end
     RefreshMenuText()
     ns.ApplyTheme(ns.GetThemeKey())
 end)

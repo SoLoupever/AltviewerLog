@@ -5,6 +5,7 @@
 ## Version: 1.0.0
 ## IconTexture: Interface\AddOns\AltViewerLog\Logo_Alt.blp
 ## RequiredDeps: AltViewerLog, ViewerLog
+## OptionalDeps: AltViewerLog_Inventory
 
 ## ── LOCALISATION ─────────────────────────────────────────────────
 locales\Locales_frFR.lua

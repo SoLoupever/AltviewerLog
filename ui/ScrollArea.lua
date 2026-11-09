@@ -1,16 +1,16 @@
 local addonName, ns = ...
 
 -- ====================================================
--- UI/SCROLLAREA — Zone de défilement principale + fenêtre banque
+-- UI/SCROLLAREA — Zone de défilement principale
 -- Rôle UNIQUE : créer ns.scrollFrame / ns.scrollChild
--- et ns.bankWin / ns.bankScrollChild.
+-- et exposer ns.SkinScrollBar aux dépendances.
 -- ====================================================
 
 -- ── Scrollbar moderne ────────────────────────────────────────────
 -- Remplace le rendu Blizzard par défaut (boutons haut/bas + slider
 -- gris épais) par une piste fine + un pouce coloré selon le thème
 -- actif. Un seul système de skin pour toute la ScrollFrame de
--- l'addon (scroll principal ET fenêtre banque) — pas de variante
+-- l'addon (scroll principal ET fenêtres des dépendances) — pas de variante
 -- par usage. Ne touche qu'au visuel : le scroll lui-même reste
 -- géré nativement par la ScrollFrame (SetVerticalScroll /
 -- GetVerticalScrollRange), rien n'est réimplémenté côté logique.
@@ -160,46 +160,3 @@ ns.mainFrame:HookScript("OnSizeChanged", function()
         ns.currentView()
     end
 end)
-
--- ── Fenêtre banque flottante ──────────────────────────────────────
-ns.bankWin = CreateFrame("Frame", "AVL_BankWin", UIParent, "BackdropTemplate")
-ns.bankWin:SetSize(720, 540)
-ns.bankWin:SetPoint("CENTER", UIParent, "CENTER", 360, 0)
-ns.Skin.Frame(ns.bankWin, "window")
-ns.bankWin:SetMovable(true)
-ns.bankWin:EnableMouse(false)
-ns.bankWin:SetClampedToScreen(true)
-ns.bankWin:SetFrameStrata("HIGH")
-ns.bankWin:Hide()
-table.insert(UISpecialFrames, "AVL_BankWin")
-
-local bankTitleBar = CreateFrame("Frame", nil, ns.bankWin)
-bankTitleBar:SetHeight(ns.LAYOUT.titleH)
-bankTitleBar:SetPoint("TOPLEFT",  ns.bankWin, "TOPLEFT",  0, 0)
-bankTitleBar:SetPoint("TOPRIGHT", ns.bankWin, "TOPRIGHT", 0, 0)
-bankTitleBar:SetFrameLevel(ns.bankWin:GetFrameLevel() + 2)
-bankTitleBar:EnableMouse(true)
-bankTitleBar:RegisterForDrag("LeftButton")
-bankTitleBar:SetScript("OnDragStart", function() ns.bankWin:StartMoving() end)
-bankTitleBar:SetScript("OnDragStop", function()
-    ns.bankWin:StopMovingOrSizing()
-    local x, y = ns.bankWin:GetLeft(), ns.bankWin:GetTop()
-    ns.bankWin:ClearAllPoints()
-    ns.bankWin:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x, y)
-end)
-
-ns.bankWin.titleText = bankTitleBar:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-ns.bankWin.titleText:SetPoint("LEFT", 16, 0)
-ns.bankWin.titleText:SetText("|cff" .. ns.Theme.title .. ns.L("UI_TITLE") .. "|r |cffaaaaaa-|r |cffffd100" .. ns.L("BTN_BANK") .. "|r")
-
-local bankClose = ns.Skin.CloseButton(bankTitleBar, function() ns.bankWin:Hide() end)
-bankClose:SetPoint("RIGHT", -12, 0)
-
-local bankSF = CreateFrame("ScrollFrame", nil, ns.bankWin, "UIPanelScrollFrameTemplate")
-bankSF:SetPoint("TOPLEFT",     ns.bankWin, "TOPLEFT",     12, -ns.LAYOUT.titleH - 4)
-bankSF:SetPoint("BOTTOMRIGHT", ns.bankWin, "BOTTOMRIGHT", -28,  10)
-
-ns.bankScrollChild = CreateFrame("Frame", nil, bankSF)
-ns.bankScrollChild:SetSize(650, 1)
-bankSF:SetScrollChild(ns.bankScrollChild)
-ns.SkinScrollBar(bankSF)

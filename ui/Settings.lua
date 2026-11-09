@@ -7,6 +7,8 @@ local addonName, ns = ...
 -- ns.RegisterSettingsSection(fn) depuis leur Init.lua :
 -- fn(parent, y) dessine dans une carte dédiée (y relatif
 -- au coin haut-gauche de la carte) et retourne le nouveau y.
+-- Widgets partagés pour ces sections : ns.SettingsUI
+-- (Header, Checkbox) — même rendu que la carte du noyau.
 -- ====================================================
 
 ns._settingsSections = ns._settingsSections or {}
@@ -48,6 +50,16 @@ local function MakeCheckbox(parent, y, labelText, get, set)
     cb:SetScript("OnClick", function(self) set(self:GetChecked() and true or false) end)
     return y - 28
 end
+
+-- Titre de carte (couleur de titre du thème)
+local function MakeHeader(parent, y, text)
+    local fs = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    fs:SetPoint("TOPLEFT", PAD, y)
+    fs:SetText("|cff" .. ns.Theme.title .. text .. "|r")
+    return y - 30
+end
+
+ns.SettingsUI = { Header = MakeHeader, Checkbox = MakeCheckbox }
 
 -- Bouton de choix (langue / thème) : doré quand actif
 local function MakeChoice(parent, label, active, onClick)
@@ -123,20 +135,11 @@ function ns.ShowSettings()
     local card = MakeCard(sc, y)
     local cy = -PAD
 
-    local sec = card:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    sec:SetPoint("TOPLEFT", PAD, cy)
-    sec:SetText("|cff" .. t.title .. ns.L("UI_TITLE") .. "|r")
-    cy = cy - 30
+    cy = MakeHeader(card, cy, ns.L("UI_TITLE"))
 
-    cy = MakeCheckbox(card, cy, ns.L("SORT_POP"),
-        function() return Settings().sortByPop or false end,
-        function(v) Settings().sortByPop = v end)
     cy = MakeCheckbox(card, cy, ns.L("CAT_MODE"),
         function() return Settings().useCategoryMode or false end,
         function(v) Settings().useCategoryMode = v end)
-    cy = MakeCheckbox(card, cy, ns.L("BANK_INLINE_MODE"),
-        function() return Settings().bankInline or false end,
-        function(v) Settings().bankInline = v end)
     cy = MakeCheckbox(card, cy, ns.L("DEBUG_MODE"),
         function() return Settings().debugMode == true end,
         function(v) Settings().debugMode = v; ns.ShowSettings() end)

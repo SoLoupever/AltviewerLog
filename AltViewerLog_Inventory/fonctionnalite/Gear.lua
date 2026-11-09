@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local core = ns.core
 
 -- ====================================================
 -- STUFF & GEAR — Vue équipement par personnage
@@ -297,8 +298,8 @@ end
 -- ns.ShowGear
 -- ====================================================
 function ns.ShowGear(selectedChar, selectedRealm)
-    ns.currentView       = ns.ShowGear
-    ns.currentViewIsBank = false
+    core.currentView       = ns.ShowGear
+    core.currentViewIsBank = false
     ns.ClearContent()
     if ns.scrollFrame then ns.scrollFrame:SetVerticalScroll(0) end
     if not ns.DP_IsReady() then return end
@@ -411,3 +412,6 @@ function ns.ShowGear(selectedChar, selectedRealm)
     ns.scrollChild:SetHeight(math.abs(math.min(col1Y, col2Y)) + 60)
     ns.UpdateBottomBar()
 end
+
+-- ── Enregistrement sidebar ────────────────────────────────────────
+ns.AddSidebarButton(14, "BTN_GEAR", function() ns.ShowGear() end, ns.ShowGear)

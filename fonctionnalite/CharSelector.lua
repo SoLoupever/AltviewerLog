@@ -305,10 +305,17 @@ local function Build()
 end
 
 -- ── Placement ─────────────────────────────────────────────────────
+-- Fenêtres hôtes en plus de la fenêtre principale (ex. banque flottante).
+-- Une fenêtre hôte doit exposer .titleText (barre de titre).
+local hostFrames = {}
+function ns.RegisterHostFrame(frame)
+    if frame then hostFrames[frame] = true end
+end
+
 local function ResolveHost(anchor)
     local f = anchor
     while f do
-        if f == ns.bankWin or f == ns.mainFrame then return f end
+        if f == ns.mainFrame or hostFrames[f] then return f end
         f = f:GetParent()
     end
     return ns.mainFrame

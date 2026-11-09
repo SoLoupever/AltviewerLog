@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local core = ns.core
 
 local math_floor = math.floor
 
@@ -211,18 +212,11 @@ end
 
 -- Cache la barre quand une autre vue vide le contenu ; RefreshCharacterList
 -- lève ce drapeau le temps de son propre ClearContent pour la garder visible.
-do
-    local _origClearContent = ns.ClearContent
-    if _origClearContent and not ns._charSearchClearHooked then
-        ns._charSearchClearHooked = true
-        ns.ClearContent = function(...)
-            if ns._charSearchBox and not ns._charSearchRefreshing then
-                ns._charSearchBox:Hide()
-            end
-            return _origClearContent(...)
-        end
+core.RegisterContentCleaner(function()
+    if ns._charSearchBox and not ns._charSearchRefreshing then
+        ns._charSearchBox:Hide()
     end
-end
+end)
 
 -- Test de correspondance (nom de perso ou nom de serveur).
 local function CharMatchesQuery(charName, realmName, query)
@@ -358,8 +352,8 @@ end
 -- ====================================================
 function ns.RefreshCharacterList()
     if not ns.scrollChild then return end
-    ns.currentView = ns.RefreshCharacterList
-    ns.currentViewIsBank = false
+    core.currentView = ns.RefreshCharacterList
+    core.currentViewIsBank = false
     -- Garde la barre de recherche visible pendant NOTRE ClearContent.
     ns._charSearchRefreshing = true
     ns.ClearContent()
@@ -528,3 +522,47 @@ function ns.RefreshCharacterList()
     ns.scrollChild:SetHeight(math.abs(offsetY) + 30)
     ns.UpdateBottomBar()
 end
+
+-- ====================================================
+-- ENREGISTREMENT : bouton sidebar, vue d'accueil, rafraîchissements
+-- ====================================================
+local function RefreshIfListShown()
+    if core.mainFrame and core.mainFrame:IsShown()
+    and core.currentView == ns.RefreshCharacterList then
+        ns.RefreshCharacterList()
+    end
+end
+
+ns.AddSidebarButton(11, "BTN_CHARS", function()
+    ns.activeFilterCat = nil
+    ns.RefreshCharacterList()
+end, ns.RefreshCharacterList)
+core.SetHomeView(ns.RefreshCharacterList)
+
+-- Callback ViewerLog (multi-listener ; repli single-listener pour les
+-- anciennes versions). Enregistré au login : l'API peut ne pas être
+-- encore exposée au chargement du fichier.
+local function RegisterProfCallback()
+    local vlAPI = _G.ViewerLogAPI
+    if not vlAPI then return end
+    if vlAPI.RegisterProfessionsCallback then
+        vlAPI.RegisterProfessionsCallback(RefreshIfListShown)
+    else
+        vlAPI.OnProfessionsScanned = RefreshIfListShown
+    end
+end
+
+local ev = CreateFrame("Frame")
+ev:RegisterEvent("PLAYER_LOGIN")
+ev:RegisterEvent("TIME_PLAYED_MSG")
+ev:SetScript("OnEvent", function(self, event)
+    if event == "TIME_PLAYED_MSG" then
+        RefreshIfListShown()
+        return
+    end
+    self:UnregisterEvent("PLAYER_LOGIN")
+    RegisterProfCallback()
+    -- ViewerLog scanne les métiers à +8 s : refresh à +10 s pour que
+    -- les icônes de métiers apparaissent si la fenêtre est déjà ouverte.
+    C_Timer.After(10, RefreshIfListShown)
+end)

@@ -1,0 +1,38 @@
+## Interface: 120105
+## Title: AltViewerLog |cff4da6ffInventaire|r
+## Notes: Vues d'inventaire pour AltViewerLog : personnages, sacs, banque, bataillon, équipement, recherche.
+## Author: SoLoup_ever
+## RequiredDeps: AltViewerLog, ViewerLog
+## Version: 1.0.0
+## IconTexture: Interface\AddOns\AltViewerLog\Logo_Alt.blp
+
+## ── NAMESPACE ────────────────────────────────────────────────────
+core\Init.lua
+
+## ── LOCALISATION ─────────────────────────────────────────────────
+locales\Locales_frFR.lua
+locales\Locales_enUS.lua
+
+## ── NOYAU ────────────────────────────────────────────────────────
+core\Pool.lua
+core\FilterCats.lua
+core\WarbandGold.lua
+core\Diagnostics.lua
+
+## ── INTERFACE ────────────────────────────────────────────────────
+ui\SidebarButton.lua
+ui\BankWindow.lua
+ui\BottomBar.lua
+ui\Settings.lua
+
+## ── VUES ─────────────────────────────────────────────────────────
+views\Bags.lua
+views\Categories.lua
+
+## ── FONCTIONNALITÉS ──────────────────────────────────────────────
+fonctionnalite\RealmToggle.lua
+fonctionnalite\Characters.lua
+fonctionnalite\Bank.lua
+fonctionnalite\Search.lua
+fonctionnalite\Warband.lua
+fonctionnalite\Gear.lua

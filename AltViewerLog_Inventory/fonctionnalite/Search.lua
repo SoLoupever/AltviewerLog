@@ -1,4 +1,5 @@
 local addonName, ns = ...
+local core = ns.core
 
 -- ====================================================
 -- VUE RECHERCHE GLOBALE
@@ -14,8 +15,8 @@ local AVL_searchTimer = nil
 local AVL_SearchRebuild
 
 function ns.ShowSearch()
-    ns.currentView       = ns.ShowSearch
-    ns.currentViewIsBank = false
+    core.currentView       = ns.ShowSearch
+    core.currentViewIsBank = false
     ns.ClearContent()
 
     if not ns.DP_IsReady() then return end
@@ -436,4 +437,15 @@ function ns.ShowSearch()
 
     -- Hauteur initiale (barre seule, pas encore de résultats)
     ns.scrollChild:SetHeight(120)
+end
+
+-- ── Enregistrement sidebar + fermeture des popups ─────────────────
+ns.AddSidebarButton(10, "BTN_SEARCH", function() ns.ShowSearch() end, ns.ShowSearch)
+
+-- Chaîné sur CloseModulePopups (sans écraser les handlers existants)
+local _prevModuleClose = core.CloseModulePopups
+core.CloseModulePopups = function()
+    if _prevModuleClose then _prevModuleClose() end
+    if ns._searchDropdown and ns._searchDropdown:IsShown() then ns._searchDropdown:Hide() end
+    if ns._searchCloseW and ns._searchCloseW:IsShown() then ns._searchCloseW:Hide() end
 end

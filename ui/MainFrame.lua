@@ -92,8 +92,8 @@ resizeGrip:SetScript("OnMouseUp", function(_, btn)
     ns.scrollChild:SetWidth(ns.GetContentWidth())
     if ns.currentView and not ns.currentViewIsBank then
         ns.currentView()
-    else
-        ns.RefreshCharacterList()
+    elseif ns.homeView then
+        ns.homeView()
     end
 end)
 mainFrame.resizeGrip = resizeGrip
@@ -102,11 +102,13 @@ mainFrame.resizeGrip = resizeGrip
 function ns.ToggleMainFrame()
     if mainFrame:IsShown() then mainFrame:Hide() return end
     mainFrame:Show()
-    ns.RefreshCharacterList()
-    ns.Skin.SetActive(ns.btnChars)
+    -- Vue d'accueil fournie par une dépendance, sinon Paramètres
+    local home = ns.homeView or ns.ShowSettings
+    home()
+    ns.HighlightCurrentView()
 end
 
--- ── Barre du bas (conteneur ; les 3 boutons sont dans BottomBar.lua)
+-- ── Barre du bas (conteneur ; les items sont enregistrés via BottomBar.lua)
 ns.bottomBar = CreateFrame("Frame", "AVL_BottomBar", mainFrame)
 ns.bottomBar:SetHeight(LAYOUT.bottomH)
 ns.bottomBar:SetPoint("BOTTOMLEFT",  mainFrame, "BOTTOMLEFT",  0, 0)
