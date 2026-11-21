@@ -5,6 +5,7 @@ move-folders:
   AltViewerLog/AltViewerLog_GuildeLog: AltViewerLog_GuildeLog
   AltViewerLog/AltViewerLog_Professions: AltViewerLog_Professions
   AltViewerLog/AltViewerLog_Reput: AltViewerLog_Reput
+  AltViewerLog/AltViewerLog_Inventory: AltViewerLog_Inventory
 
 ignore:
   - .github
